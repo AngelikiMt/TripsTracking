@@ -1,4 +1,4 @@
-from CaloriesTracking import create_app
+from TripsTracking import create_app
 
 app = create_app()
 
