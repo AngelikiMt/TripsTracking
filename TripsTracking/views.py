@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, redirect, url_for, request, session
+from flask import Blueprint, render_template, abort, redirect, url_for, request, session, flash
 from flask_restful import Api
 from markupsafe import escape
 from jinja2 import TemplateNotFound
@@ -11,7 +11,7 @@ api = Api(views)
 @views.route("/<name>", methods=['GET'])
 def home(name=None):
     if 'username' in session:
-        return f'{request.form['name']} you are logged in!'
+        flash(f'{request.form['name']} you are logged in!')
     return render_template('templates/', person=name)
 
 
@@ -23,7 +23,7 @@ def login(name=None, error=None):
         return redirect(url_for('home'))
     return render_template('views.home', person=name, error=error)
 
-@views.route("/TriopsLogout", methods=['GET'])
+@views.route("/TripsLogout", methods=['GET'])
 def logout():
     session.pop('username', None)
     return redirect(url_for('home'))
