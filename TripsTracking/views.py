@@ -12,7 +12,7 @@ api = Api(views)
 def home(name=None):
     if 'username' in session:
         flash(f'{request.form['name']} you are logged in!')
-    return render_template('templates/', person=name)
+    return render_template('views.home', person=name)
 
 
 @views.route("/TripsLogin", methods=["GET", "POST"])
