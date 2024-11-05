@@ -1,13 +1,19 @@
 from flask import Flask
-import os
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    app.config(SECRET_KEY='dev')
+    app.config.from_mapping(
+        SECRET_KEY = 'dev',
+        DATABASE = 'trips.db'
+        )
 
     with app.app_context():
         from .views import views
         from .auth import auth
+        from .db import init_db_command, close_db
+
         app.register_blueprint(views)
         app.register_blueprint(auth)
+        app.teardown_appcontext(close_db)
+        app.cli.add_command(init_db_command)
     return app
