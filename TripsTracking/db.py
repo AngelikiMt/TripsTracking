@@ -9,7 +9,6 @@ def get_db():
         g.db = sqlite3.connect(
             current_app.config['DATABASE'],
         )
-        g.db.commit()
     return g.db
 
 # closes the connection if exists
