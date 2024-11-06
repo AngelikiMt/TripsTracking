@@ -9,24 +9,10 @@ views = Blueprint("views", __name__, template_folder = 'templates')
 api = Api(views)
 
 @views.route("/<name>", methods=['GET'])
-def home(name=None):
-    if 'username' in session:
-        flash(f'{request.form['name']} you are logged in!')
-    return render_template('views.home', person=name)
-
-
-@views.route("/TripsLogin", methods=["GET", "POST"])
-def login(name=None, error=None):
-    #form = login_form
-    if request.method == 'POST':
-        session['username'] = request.form['username']
-        return redirect(url_for('home'))
-    return render_template('views.home', person=name, error=error)
-
-@views.route("/TripsLogout", methods=['GET'])
-def logout():
-    session.pop('username', None)
-    return redirect(url_for('home'))
+def home(fullname=None):
+    if 'user_id' in session:
+        flash(f'{request.form['fullname']} you are logged in!', fullname)
+    return render_template('views.home', person=fullname)
 
 @views.route("/UploadImagies", methods=['GET', 'POST'])
 def upload_imagies():
