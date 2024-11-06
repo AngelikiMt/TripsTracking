@@ -8,11 +8,14 @@ from werkzeug.utils import secure_filename
 views = Blueprint("views", __name__, template_folder = 'templates')
 api = Api(views)
 
-@views.route("/<name>", methods=['GET'])
-def home(fullname=None):
-    if 'user_id' in session:
-        flash(f'{request.form['fullname']} you are logged in!', fullname)
-    return render_template('views.home', person=fullname)
+@views.route("/<fullname>", methods=['GET'])
+def home(lang, fullname=None):
+    try:
+        if 'user_id' in session:
+            flash(f'{fullname} you are logged in!')
+        return redirect(url_for('views.get_home', person=fullname, lang=lang))
+    except TemplateNotFound:
+        abort(404)
 
 @views.route("/UploadImagies", methods=['GET', 'POST'])
 def upload_imagies():

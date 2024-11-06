@@ -2,13 +2,14 @@ from flask import Blueprint, render_template, redirect, url_for, request, sessio
 from flask_restful import Api
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import get_db
+import functools
 
 auth = Blueprint("auth", __name__, url_prefix='/auth')
 api = Api(auth)
 
 # Register
 @auth.route('/tripsRegister', methods=['GET', 'POST'])
-def register():
+def register(lang):
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -36,11 +37,11 @@ def register():
             else:
                 return redirect(url_for("auth.login"))
         flash(error)
-    return render_template('auth/tripsRegister.html')
+    return render_template('auth/tripsRegister.html', lang=lang)
 
 # Login
 @auth.route('/login', methods = ['GET', 'POST'])
-def login():
+def login(lang):
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -60,9 +61,9 @@ def login():
         if error is None:
             session.clear()
             session['user_id'] = user['user_id']                                                                                  
-            return redirect(url_for('home'))
+            return redirect(url_for('views.home'))
         flash(error)
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', lang=lang)
 
 # For user's information to be available to other views
 @auth.app_requests
@@ -77,8 +78,17 @@ def users_info():
             'SELECT * FROM user WHERE user_id = ?', (user_id)
         ).fetchone()
 
+# For crud the trips tracking the user must be logged in.
+def crud_trips(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user in None:
+            return redirect(url_for('auth.login'))
+        return view(**kwargs)
+    return wrapped_view
+
 # Logout
 @auth.roote('/logout', methods = ['GET'])
 def logout():
     session.clear()
-    return redirect(url_for('home'))
+    return redirect(url_for('views.home'))
