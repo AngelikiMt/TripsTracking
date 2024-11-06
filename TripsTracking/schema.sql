@@ -12,10 +12,10 @@ CREATE TABLE user (
 CREATE TABLE trips (
     trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
     location TEXT NOT NULL,
-    date INTEGER NOT NULL,
+    date TEXT,
     description BLOB NOT NULL,
-    badget INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    budget REAL,
+    user_id INTEGER,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user (user_id)
 );
