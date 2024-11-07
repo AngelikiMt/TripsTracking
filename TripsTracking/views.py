@@ -6,9 +6,8 @@ from werkzeug.utils import secure_filename
 from .db import open_db
 
 views = Blueprint("views", __name__, template_folder = 'templates')
-db = open_db()
 
-@views.route("/<fullname>", methods=['GET'])
+@views.route("/user/<fullname>", methods=['GET'])
 def home(lang, fullname=None):
     try:
         if 'user_id' in session:
@@ -23,9 +22,10 @@ def upload_images():
         file = request.files['the_file']
         file.save(f'{secure_filename(file.filename)}')
 
+# Create a new trip (Create)
 @views.route("/myTrips", methods = ['GET', 'POST'])
 def myTrips(lang):
-    # Create a new trip (Create)
+    db = open_db()
     if request.method == 'POST':
         location = request.form['location']
         date = request.form['date']
@@ -53,9 +53,11 @@ def myTrips(lang):
 
     return render_template('my_trips.html', trips=trips, lang=lang)
 
-# Edit trip
-@views.route("/myTrips/edit/<location>", methods = ['GET', 'POST'])
+# Update trip
+@views.route("/myTrips/edit/<location>", methods = ['GET', 'PUT'])
 def edit_trip(trip_id, lang):
+    db = open_db()
+
     # Fetch the specific trip for editing
     trip = db.execute(
         'SELECT * FROM trip where id = ?', (trip_id)
@@ -83,8 +85,10 @@ def edit_trip(trip_id, lang):
     return render_template('edit_trip.html', trip=trip, lang=lang)
 
 # Deleted trip
-@views.route("/myTrips/delete/<location>", methods = ['POST'])
+@views.route("/myTrips/delete/<location>", methods = ['DELETE'])
 def deleteTrip(trip_id, lang):
+    db = open_db()
+
     db.execute(
         'DELETE FROM trip WHERE trip_id = ?' , (trip_id)
     )
