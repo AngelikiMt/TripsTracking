@@ -3,22 +3,21 @@ from flask_restful import Api
 from markupsafe import escape
 from jinja2 import TemplateNotFound
 from werkzeug.utils import secure_filename 
-from .db import get_db
+from .db import open_db
 
 views = Blueprint("views", __name__, template_folder = 'templates')
-api = Api(views)
-db = get_db()
+db = open_db()
 
 @views.route("/<fullname>", methods=['GET'])
 def home(lang, fullname=None):
     try:
         if 'user_id' in session:
             flash(f'{fullname} you are logged in!')
-        return redirect(url_for('views.get_home', person=fullname, lang=lang))
+        return redirect(url_for('views.home', person=fullname, lang=lang))
     except TemplateNotFound:
         abort(404)
 
-@views.route("/UploadImagies", methods=['GET', 'POST'])
+@views.route("/UploadImages", methods=['GET', 'POST'])
 def upload_images():
     if request.method == 'POST':
         file = request.files['the_file']
