@@ -1,29 +1,60 @@
-from flask import Blueprint, render_template, abort, redirect, url_for, request, session, flash
-from flask_restful import Api
+from flask import Blueprint, render_template, abort, redirect, url_for, request, session, flash, jsonify, current_app, g
+from flask_restful import Api, Resource
 from markupsafe import escape
-from jinja2 import TemplateNotFound
 from werkzeug.utils import secure_filename 
 from .db import open_db
+import os
 
 views = Blueprint("views", __name__, template_folder = 'templates')
+api = Api(views)
+# Allowed extensions for photos
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-@views.route("/user/<fullname>", methods=['GET'])
-def home(lang, fullname=None):
-    try:
-        if 'user_id' in session:
-            flash(f'{fullname} you are logged in!')
-        return redirect(url_for('views.home', person=fullname, lang=lang))
-    except TemplateNotFound:
-        abort(404)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@views.route("/UploadImages", methods=['GET', 'POST'])
-def upload_images():
-    if request.method == 'POST':
-        file = request.files['the_file']
-        file.save(f'{secure_filename(file.filename)}')
+@views.route("/api/user/<fullname>", methods=['GET'])
+def home(user_id=None, fullname=None):
+    lang = request.args.get('lang', 'en')
+    db = open_db()
+
+    user = db.execute(
+        'SELECT user_id, username, password FROM user WHERE user_id = ?', (user_id,)
+    ).fetchone()
+
+    if user is None:
+        return jsonify({"error": f"User with user id: {user_id} not found"}), 404
+    
+    return jsonify({
+        "message": f"{fullname}, you are logged in!",
+        "user": {
+            "user_id" : user['user_id'],
+            "username" : user['username']
+        },
+        "lang": lang
+    }), 200
+    
+# uploading photos
+@views.route("/api/trips/<int:trip_id>/photos", methods=['GET', 'POST'])
+def upload_photos(trip_id):
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        # Save file path to database
+        db = open_db()
+        db.execute(
+            'INSERT INTO trips (trip_id, description) VALUES (?, ?)' (trip_id, file_path)
+        )
+        db.commit()
+
+        return jsonify({"message": "Photos uploaded successfully"}), 201
+    return jsonify({"error": "Invalid file type"}), 400
 
 # Create a new trip (Create)
-@views.route("/myTrips", methods = ['GET', 'POST'])
+@views.route("/api/my_trips/<int:trip_id>", methods = ['GET', 'POST'])
 def myTrips(lang):
     db = open_db()
     if request.method == 'POST':
@@ -54,7 +85,7 @@ def myTrips(lang):
     return render_template('my_trips.html', trips=trips, lang=lang)
 
 # Update trip
-@views.route("/myTrips/edit/<location>", methods = ['GET', 'PUT'])
+@views.route("/api/my_trips/edit/<int:trip_id>", methods = ['GET', 'PUT'])
 def edit_trip(trip_id, lang):
     db = open_db()
 
@@ -95,3 +126,15 @@ def deleteTrip(trip_id, lang):
     db.commit()
     flash("Trip deleted successfully!")
     return redirect(url_for('views.myTrips', lang=lang))
+
+@views.before_request
+def users_info():
+    db = open_db()
+    user_id = session.get('user_id')
+
+    if user_id in None:
+        g.user = None
+    else:
+        g.user = db.execute(
+            'SELECT * FROM user WHERE user_id = ?', (user_id)
+        ).fetchone()

@@ -61,8 +61,8 @@ def login(lang):
         flash(error)
     return render_template('auth/login.html', lang=lang)
 
-# For user's information to be available to other views
-@auth.app_requests
+# For user's information to be available to other auth blueprints
+@auth.before_request
 def users_info():
     user_id = session.get('user_id')
 
@@ -83,7 +83,7 @@ def crud_trips(view):
     return wrapped_view
 
 # Logout
-@auth.roote('/logout', methods = ['GET'])
+@auth.route('/logout', methods = ['GET'])
 def logout():
     session.clear()
     return redirect(url_for('views.home'))
