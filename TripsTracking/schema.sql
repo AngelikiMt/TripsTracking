@@ -13,7 +13,7 @@ CREATE TABLE trips (
     trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
     destination TEXT NOT NULL,
     date TEXT,
-    description BLOB NOT NULL,
+    description TEXT NOT NULL,
     budget REAL,
     user_id INTEGER,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,6 +33,7 @@ CREATE TABLE expenses (
 CREATE TABLE photos (
     photo_id INTEGER PRIMARY KEY AUTOINCREMENT,
     trip_id INTEGER,
-    file_path TEXT NOT NULL,
+    file_path TEXT REQUIRED NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips (trip_id) ON DELETE CASCADE
 );

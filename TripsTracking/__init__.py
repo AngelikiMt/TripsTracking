@@ -5,6 +5,7 @@ def create_app():
     app.config.from_mapping(
         SECRET_KEY = 'dev',
         DATABASE = 'trips.db'
+        UPLOAD_FOLDER = 'upload_folder'
         )
 
     with app.app_context():

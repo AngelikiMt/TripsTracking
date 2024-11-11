@@ -8,6 +8,18 @@ import os
 views = Blueprint("views", __name__)
 api = Api(views)
 
+@views.before_request
+def users_info():
+    db = open_db()
+    user_id = session.get('user_id')
+
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = db.execute(
+            'SELECT * FROM user WHERE user_id = ?', (user_id,)
+        ).fetchone()
+
 class Trips(Resource):
     def get(self, trip_id=None):
         db = open_db()
@@ -115,18 +127,6 @@ class Trips(Resource):
 # Retrieve all trips (Read), Create, Read, Update, Delete a trip
 api.add_resource(Trips, "/trips/", "/trips/<int:trip_id>/")
 
-@views.before_request
-def users_info():
-    db = open_db()
-    user_id = session.get('user_id')
-
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = db.execute(
-            'SELECT * FROM user WHERE user_id = ?', (user_id,)
-        ).fetchone()
-
 # uploading photos
 # Allowed extensions for photos
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -134,33 +134,80 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@views.route("/api/trips/<int:destination>/photos", methods=['GET'])
-def list_photos(trip_id):
-    lang = request.args.get('lang', 'en')
-    db = open_db()
-    try:
-        photos = db.execute(
-            'SELECT * FROM trips where trip_id = ?', (trip_id,)
-        )
-        destination = photos['destination']
-        return jsonify({"message": "Photos", "destination":destination, "lang": lang}), 200
-    except ValueError:
-        return jsonify({"error": "No file found", "lang": lang}), 400
-
-@views.route("/api/trips/<int:trip_id>/photos", methods=['POST'])
-def upload_photos(trip_id):
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-
-        # Save file path to database
+class Photos(Resource):
+    def get_photo(self, photo_id=None):
         db = open_db()
-        db.execute(
-            'INSERT INTO photos (photo_id, file_path) VALUES (?, ?)', (trip_id, file_path)
+        
+        if photo_id is None:
+            photos = db.execute(
+                'SELECT photo_id, file_path, timestamp FROM photos ORDER BY timestamp DESC'
+            )
+            
+            if not photos:
+                return jsonify({"error": "No photos found"}), 400
+
+            photos_list = []
+            for photo in photos:
+                photos_list.append({
+                    "photo_id" : escape(photo["photo_id"]),
+                    "file_path" : escape(photo["file_path"]),
+                    "timestamp" : escape(photo["timestamp"])
+                })
+            return jsonify(photos_list), 200
+
+        else:
+            photo = db.execute(
+                'SELECT photo_id, file_path, timestamp FROM photos where photo_id = ?', (photo_id,)
+            )
+
+            if photo is None:
+                return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
+
+            return jsonify({
+                "photo_id": escape(photo["Photo_id"]),
+                "file_path": escape(photo["file_path"]),
+                "timestamp": escape(photo["timestamp"])
+                }), 200
+        
+    def post_photo(self):
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            # Save file path to database
+            db = open_db()
+
+            if not file_path:
+                return jsonify({"error": "file path is required"}), 400
+            
+            db.execute(
+                'INSERT INTO photos (file_path) VALUES (?)', (file_path)
+            )
+            db.commit()
+
+            return jsonify({"message": "Photos uploaded successfully"}), 201
+        return jsonify({"error": "Invalid file type or no file found"}), 400
+    
+    def delete_photo(self, photo_id):
+        db = open_db()
+
+        photo = db.execute(
+            'SELECT * FROM photos WHERE photo_id = ?', (photo_id,)
         )
+
+        if not photo:
+            return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
+        
+        db.execute(
+            'DELETE * FROM photos WHERE photo_id = ?', (photo_id,)
+        )
+
         db.commit()
 
-        return jsonify({"message": "Photos uploaded successfully"}), 201
-    return jsonify({"error": "Invalid file type"}), 400
+        return jsonify({"message": "Photo deleted successfully!"}), 200
+
+
+api.add_resource(Photos, "/api/trips/photos/<int:photo_id>")
+    
