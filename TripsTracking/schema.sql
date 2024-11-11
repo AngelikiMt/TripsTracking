@@ -11,7 +11,7 @@ CREATE TABLE user (
 
 CREATE TABLE trips (
     trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    location TEXT NOT NULL,
+    destination TEXT NOT NULL,
     date TEXT,
     description BLOB NOT NULL,
     budget REAL,
@@ -31,7 +31,7 @@ CREATE TABLE expenses (
 );
 
 CREATE TABLE photos (
-    photos_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    photo_id INTEGER PRIMARY KEY AUTOINCREMENT,
     trip_id INTEGER,
     file_path TEXT NOT NULL,
     FOREIGN KEY (trip_id) REFERENCES trips (trip_id) ON DELETE CASCADE

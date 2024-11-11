@@ -1,14 +1,17 @@
-from flask import Blueprint, request, session, flash, g, jsonify
+from flask import Blueprint, request, session, g, jsonify
 from flask_restful import Api
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
 
 auth = Blueprint("auth", __name__, url_prefix='/auth')
+api = Api(auth)
+
 
 # Register
 @auth.route('/api/register', methods=['POST'])
 def register():
+    lang = request.args.get('lang', 'en')
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -30,19 +33,20 @@ def register():
                 (username, generate_password_hash(password), fullname,)
             )
             db.commit()
-            return jsonify({"message": "Registered successfully"}), 201
+            return jsonify({"message": "Registered successfully", "lang": lang}), 201
         except db.IntegrityError:
             error = f"User {username} is already registered."
     
-    return jsonify({"error": error}), 400
+    return jsonify({"error": error, "lang": lang}), 400
 
 
 # Login
-@auth.route('/api/login', methods = ['POST'])
-def login():
+@auth.route('/api/login/<fullname>', methods = ['POST'])
+def login(fullname=None):
+    lang = request.args.get('lang', 'en')
     data = request.get_json()
     username = data.get('username')
-    password = data.get('password')
+    password = check_password_hash(data.get('password'))
 
     db = open_db()
 
@@ -58,10 +62,11 @@ def login():
     
     if error is None:
         session.clear()
-        session['user_id'] = user['user_id']                                                                                  
-        return jsonify({"message": "Login successful", "user_id": user['user_id']}), 200
+        session['user_id'] = user['user_id']
+        fullname = user['fullname']                                                                               
+        return jsonify({"message": f"{fullname}, login successful", "user_id": user['user_id'], "username": user['username'], "lang": lang}), 200
     else:
-        return jsonify({"error": error}), 401
+        return jsonify({"error": error, "lang": lang}), 401
 
 
 # For user's information to be available to other auth blueprints
@@ -89,5 +94,6 @@ def crud_trips(view):
 # Logout
 @auth.route('/api/logout', methods = ['POST'])
 def logout():
+    lang = request.args.get('lang', 'en')
     session.clear()
-    return jsonify({"message": "Logout successfully"}), 200
+    return jsonify({"message": "Logout successfully", "lang": lang}), 200

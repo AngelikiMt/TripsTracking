@@ -1,131 +1,101 @@
-from flask import Blueprint, abort, request, session, flash, jsonify, current_app, g
+from flask import Blueprint, abort, request, session, jsonify, current_app, g
 from flask_restful import Api, Resource
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
 from .db import open_db
 import os
 
-views = Blueprint("views", __name__, template_folder = 'templates')
+views = Blueprint("views", __name__)
 api = Api(views)
-# Allowed extensions for photos
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@views.route("/api/user/<fullname>", methods=['GET'])
-def get_home(user_id=None, fullname=None):
-    lang = request.args.get('lang', 'en')
-    db = open_db()
-
-    user = db.execute(
-        'SELECT user_id, username, password FROM user WHERE user_id = ?', (user_id,)
-    ).fetchone()
-
-    if user is None:
-        return jsonify({"error": f"User with user id: {user_id} not found"}), 404
-    
-    return jsonify({
-        "message": f"{fullname}, you are logged in!",
-        "user": {
-            "user_id" : user['user_id'],
-            "username" : user['username']
-        },
-        "lang": lang
-    }), 200
-    
-# uploading photos
-@views.route("/api/trips/<int:trip_id>/photos", methods=['GET', 'POST'])
-def upload_photos(trip_id):
-    file = request.files['file']
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-
-        # Save file path to database
+class Trips(Resource):
+    def get_trip(self, trip_id):
         db = open_db()
-        db.execute(
-            'INSERT INTO trips (trip_id, description) VALUES (?, ?)' (trip_id, file_path)
+        trip = db.execute(
+            'SELECT trip_id, destination, date, description, budget, timestamp FROM trip ORDER BY date DESC'
+        ).fetchall()
+        if trip_id not in trip:
+            return jsonify({"error": "Trip not found"}), 404
+        return trip[trip_id]
+    
+    def post_trip(self, trip_id):
+        lang = request.args.get('lang', 'en')
+        db = open_db()
+        data = request.get_json()
+
+        destination = data.get['destination']
+        date = data.get['date']
+        description = data.get['description']
+        budget = data.get['bdget']
+
+        if not destination:
+            return jsonify({"error": "Your trip's destination is required"}), 404
+        
+        if not description:
+            return jsonify({"error": "Your trip's description is required"}), 404
+        
+        else:
+            db.execute(
+                'INSERT INTO trip (destination, date, descrition, budget) VALUES (?, ?, ?, ?)', (destination, date, description, budget,)
+            )
+            db.commit()
+            return jsonify({"message": f"The trip with trip id {trip_id} created successfully!"}), 200
+        
+    def put_trip(self, trip_id):
+        lang = request.args.get("lang", "en")
+        db = open_db()
+        data = request.get_json()
+
+        # Fetch the specific trip for editing
+        trip = db.execute(
+            'SELECT * FROM trip where trip_id = ?', (trip_id,)
+        ).fetchone()
+        
+        destination = data.get['destination']
+        date = data.get['date']
+        description = data.get['description']
+        budget = data.get['badget']
+
+        if not destination and not description:
+            return jsonify({"error": "Description and destination of the trip are required"}), 404
+        else:
+            db.execute(
+                'UPDATE trip SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
+            )
+            db.commit()
+            return trip[trip_id]
+        
+    def delete_trip(self, trip_id):
+        lang = request.args.get("lang", "en")
+        db = open_db()
+
+        trips = db.execute(
+            'DELETE FROM trip WHERE trip_id = ?' , (trip_id,)
         )
         db.commit()
+        if trip_id not in trips:
+            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+        return jsonify({"message": "Trip deleted successfully"}), 200
+        
 
-        return jsonify({"message": "Photos uploaded successfully"}), 201
-    return jsonify({"error": "Invalid file type"}), 400
+api.add_resource(Trips, "/trips/<int:trip_id>/")
+
+# Retrieve all trips (Read)
+#@views.route("api/my_trips", methods = ['GET'])
+#def get_trips():
 
 # Create a new trip (Create)
-@views.route("/api/my_trips/<int:trip_id>", methods = ['GET', 'POST'])
-def myTrips(lang):
-    db = open_db()
-    if request.method == 'POST':
-        location = request.form['location']
-        date = request.form['date']
-        description = request.form['description']
-        budget = request.form['badget']
-
-        if not location:
-            flash("Your trip's destination is required.")
-        
-        if not description:
-            flash("Your trip's description is required.")
-        
-        else:
-            db.execute(
-                'INSERT INTO trip (location, date, descrition, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget)
-            )
-            db.commit()
-            flash("Trip created successfully!")
-            return redirect(url_for('views.myTrips', lang=lang))
-        
-    # Retrieve all trips (Read)
-    trips = db.execute(
-        'SELECT trip_id, location, date, description, budget, timestamp FROM trip ORDER BY date DESC'
-    ).fetchall()
-
-    return render_template('my_trips.html', trips=trips, lang=lang)
-
+#@views.route("/api/my_trips/<int:trip_id>", methods = ['POST'])
+#def myTrips():
+    
 # Update trip
-@views.route("/api/my_trips/edit/<int:trip_id>", methods = ['GET', 'PUT'])
-def edit_trip(trip_id, lang):
-    db = open_db()
-
-    # Fetch the specific trip for editing
-    trip = db.execute(
-        'SELECT * FROM trip where id = ?', (trip_id)
-    ).fetchone()
-
-    if request.method == 'POST':
-        location = request.form['location']
-        date = request.form['date']
-        description = request.form['description']
-        budget = request.form['badget']
-
-        if not location:
-            flash("Your trip's destination is required.")
-        
-        if not description:
-            flash("Your trip's description is required.")
-
-        else:
-            db.execute(
-                'UPDATE trip SET location = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (location, date, description, budget, trip_id)
-            )
-            db.commit()
-            flash("Trip updated successully!")
-            return redirect(url_for('views.myTrips', lang=lang))
-    return render_template('edit_trip.html', trip=trip, lang=lang)
+#@views.route("/api/my_trips/edit/<int:trip_id>", methods = ['PUT'])
+#def edit_trip(trip_id):       
 
 # Deleted trip
-@views.route("/myTrips/delete/<location>", methods = ['DELETE'])
-def deleteTrip(trip_id, lang):
-    db = open_db()
-
-    db.execute(
-        'DELETE FROM trip WHERE trip_id = ?' , (trip_id)
-    )
-    db.commit()
-    flash("Trip deleted successfully!")
-    return redirect(url_for('views.myTrips', lang=lang))
+#@views.route("/myTrips/delete/<destination>", methods = ['DELETE'])
+#def deleteTrip(trip_id, lang):
+    
 
 @views.before_request
 def users_info():
@@ -138,3 +108,41 @@ def users_info():
         g.user = db.execute(
             'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
+
+# uploading photos
+# Allowed extensions for photos
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@views.route("/api/trips/<int:destination>/photos", methods=['GET'])
+def list_photos(trip_id):
+    lang = request.args.get('lang', 'en')
+    db = open_db()
+    try:
+        photos = db.execute(
+            'SELECT * FROM trips where trip_id = ?', (trip_id,)
+        )
+        destination = photos['destination']
+        return jsonify({"message": "Photos", "destination":destination, "lang": lang}), 200
+    except ValueError:
+        return jsonify({"error": "No file found", "lang": lang}), 400
+
+@views.route("/api/trips/<int:trip_id>/photos", methods=['POST'])
+def upload_photos(trip_id):
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        # Save file path to database
+        db = open_db()
+        db.execute(
+            'INSERT INTO photos (photo_id, file_path) VALUES (?, ?)' (trip_id, file_path)
+        )
+        db.commit()
+
+        return jsonify({"message": "Photos uploaded successfully"}), 201
+    return jsonify({"error": "Invalid file type"}), 400
