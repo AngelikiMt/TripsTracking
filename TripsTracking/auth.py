@@ -1,12 +1,11 @@
 from flask import Blueprint, request, session, g, jsonify
-from flask_restful import Api
+from flask_restful import Api, Resource
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
 
 auth = Blueprint("auth", __name__, url_prefix='/auth')
 api = Api(auth)
-
 
 # Register
 @auth.route('/api/register', methods=['POST'])

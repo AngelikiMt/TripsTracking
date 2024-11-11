@@ -209,5 +209,5 @@ class Photos(Resource):
         return jsonify({"message": "Photo deleted successfully!"}), 200
 
 
-api.add_resource(Photos, "/api/trips/photos/<int:photo_id>")
+api.add_resource(Photos, "/api/trips/photos/", "/api/trips/photos/<int:photo_id>")
     
