@@ -9,40 +9,66 @@ views = Blueprint("views", __name__)
 api = Api(views)
 
 class Trips(Resource):
-    def get_trip(self, trip_id):
+    def get(self, trip_id=None):
         db = open_db()
-        trip = db.execute(
-            'SELECT trip_id, destination, date, description, budget, timestamp FROM trip ORDER BY date DESC'
-        ).fetchall()
-        if trip_id not in trip:
-            return jsonify({"error": "Trip not found"}), 404
-        return trip[trip_id]
+
+        if trip_id is None:
+            trips = db.execute(
+                'SELECT trip_id, destination, date, description, budget, timestamp FROM trips ORDER BY date DESC'
+            ).fetchall()
+
+            if not trips:
+                return jsonify({"error": "No trips found"}), 404
+            
+            trips_list = []
+            for trip in trips:
+                trips_list.append({
+                    "trip_id": escape(trip["trip_id"]),
+                    "destination": escape(trip["destination"]),
+                    "date": escape(trip["date"]),
+                    "description": escape(trip["description"]),
+                    "budget": escape(trip["budget"]),
+                    "timestamp": escape(trip["timestamp"])
+                })
+            
+            return jsonify(trips_list), 200
+        
+        else:
+            trip = db.execute(
+                'SELECT trip_id, destination, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
+            ).fetchone()
+
+            if trip is None:
+                return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+            
+            return jsonify({
+                "trip_id": escape(trip["trip_id"]),
+                "destination": escape(trip["destination"]),
+                "date": escape(trip["date"]),
+                "description": escape(trip["description"]),
+                "budget": escape(trip["budget"]),
+                "timestamp": escape(trip["timestamp"]),
+            }), 200       
     
-    def post_trip(self, trip_id):
-        lang = request.args.get('lang', 'en')
+    def post(self):
         db = open_db()
         data = request.get_json()
 
-        destination = data.get['destination']
-        date = data.get['date']
-        description = data.get['description']
-        budget = data.get['bdget']
+        destination = data.get('destination')
+        date = data.get('date')
+        description = data.get('description')
+        budget = data.get('budget')
 
-        if not destination:
-            return jsonify({"error": "Your trip's destination is required"}), 404
+        if not destination or not description:
+            return jsonify({"error": "Destination and description are required"}), 400
         
-        if not description:
-            return jsonify({"error": "Your trip's description is required"}), 404
+        db.execute(
+            'INSERT INTO trips (destination, date, descrition, budget) VALUES (?, ?, ?, ?)', (destination, date, description, budget,)
+        )
+        db.commit()
+        return jsonify({"message": "Trip was created successfully!"}), 201
         
-        else:
-            db.execute(
-                'INSERT INTO trip (destination, date, descrition, budget) VALUES (?, ?, ?, ?)', (destination, date, description, budget,)
-            )
-            db.commit()
-            return jsonify({"message": f"The trip with trip id {trip_id} created successfully!"}), 200
-        
-    def put_trip(self, trip_id):
-        lang = request.args.get("lang", "en")
+    def put(self, trip_id):
         db = open_db()
         data = request.get_json()
 
@@ -50,52 +76,44 @@ class Trips(Resource):
         trip = db.execute(
             'SELECT * FROM trip where trip_id = ?', (trip_id,)
         ).fetchone()
-        
-        destination = data.get['destination']
-        date = data.get['date']
-        description = data.get['description']
-        budget = data.get['badget']
 
-        if not destination and not description:
+        if not trip:
+            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+        
+        destination = data.get('destination')
+        date = data.get('date')
+        description = data.get('description')
+        budget = data.get('budget')
+
+        if not destination or not description:
             return jsonify({"error": "Description and destination of the trip are required"}), 404
-        else:
-            db.execute(
-                'UPDATE trip SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
-            )
-            db.commit()
-            return trip[trip_id]
         
-    def delete_trip(self, trip_id):
-        lang = request.args.get("lang", "en")
-        db = open_db()
-
-        trips = db.execute(
-            'DELETE FROM trip WHERE trip_id = ?' , (trip_id,)
+        db.execute(
+            'UPDATE trips SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
         )
         db.commit()
-        if trip_id not in trips:
-            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
-        return jsonify({"message": "Trip deleted successfully"}), 200
+        return jsonify({"message": f"Trip with trip id {trip_id} updated successfully!"})
         
+    def delete(self, trip_id):
+        db = open_db()
 
-api.add_resource(Trips, "/trips/<int:trip_id>/")
+        trip = db.execute(
+            'SELECT * FROM trips WHERE trip_id = ?', (trip_id,)
+        )
+        
+        if not trip:
+            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
 
-# Retrieve all trips (Read)
-#@views.route("api/my_trips", methods = ['GET'])
-#def get_trips():
+        db.execute(
+            'DELETE * FROM trips WHERE trip_id = ?', (trip_id,)
+        )
 
-# Create a new trip (Create)
-#@views.route("/api/my_trips/<int:trip_id>", methods = ['POST'])
-#def myTrips():
-    
-# Update trip
-#@views.route("/api/my_trips/edit/<int:trip_id>", methods = ['PUT'])
-#def edit_trip(trip_id):       
+        db.commit()
 
-# Deleted trip
-#@views.route("/myTrips/delete/<destination>", methods = ['DELETE'])
-#def deleteTrip(trip_id, lang):
-    
+        return jsonify({"message": "Trip deleted successfully!"}), 200
+        
+# Retrieve all trips (Read), Create, Read, Update, Delete a trip
+api.add_resource(Trips, "/trips/", "/trips/<int:trip_id>/")
 
 @views.before_request
 def users_info():
@@ -140,7 +158,7 @@ def upload_photos(trip_id):
         # Save file path to database
         db = open_db()
         db.execute(
-            'INSERT INTO photos (photo_id, file_path) VALUES (?, ?)' (trip_id, file_path)
+            'INSERT INTO photos (photo_id, file_path) VALUES (?, ?)', (trip_id, file_path)
         )
         db.commit()
 
