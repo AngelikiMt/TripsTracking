@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, redirect, url_for, request, session, flash, jsonify, current_app, g
+from flask import Blueprint, abort, request, session, flash, jsonify, current_app, g
 from flask_restful import Api, Resource
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
@@ -14,7 +14,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route("/api/user/<fullname>", methods=['GET'])
-def home(user_id=None, fullname=None):
+def get_home(user_id=None, fullname=None):
     lang = request.args.get('lang', 'en')
     db = open_db()
 
@@ -132,9 +132,9 @@ def users_info():
     db = open_db()
     user_id = session.get('user_id')
 
-    if user_id in None:
+    if user_id is None:
         g.user = None
     else:
         g.user = db.execute(
-            'SELECT * FROM user WHERE user_id = ?', (user_id)
+            'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
