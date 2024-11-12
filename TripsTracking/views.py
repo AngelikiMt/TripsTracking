@@ -124,7 +124,7 @@ class Trips(Resource):
 
         return jsonify({"message": "Trip deleted successfully!"}), 200
         
-# Retrieve all trips (Read), Create, Read, Update, Delete a trip
+# Retrieve all trips (Read) / Create, Read, Update, Delete a trip
 api.add_resource(Trips, "/trips/", "/trips/<int:trip_id>/")
 
 # uploading photos
@@ -201,7 +201,7 @@ class Photos(Resource):
             return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
         
         db.execute(
-            'DELETE * FROM photos WHERE photo_id = ?', (photo_id,)
+            'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
         )
 
         db.commit()

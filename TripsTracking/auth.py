@@ -1,23 +1,24 @@
 from flask import Blueprint, request, session, g, jsonify
-from flask_restful import Api, Resource
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
 
 auth = Blueprint("auth", __name__, url_prefix='/auth')
-api = Api(auth)
 
 # Register
 @auth.route('/api/register', methods=['POST'])
 def register():
     lang = request.args.get('lang', 'en')
     data = request.get_json()
+
+    # Retrieve and validate user data
     username = data.get('username')
     password = data.get('password')
     fullname = data.get('fullname')
 
     db = open_db()
     error = None
+
     if not username:
         error = 'Username is required'
     if not fullname:
@@ -25,6 +26,7 @@ def register():
     elif not password:
         error = 'Password is required'
     
+    # Attempt to register user if there are no errors
     if error is None:
         try:
             db.execute(
@@ -39,33 +41,86 @@ def register():
     return jsonify({"error": error, "lang": lang}), 400
 
 
-# Login
-@auth.route('/api/login/<fullname>', methods = ['POST'])
-def login(fullname=None):
-    lang = request.args.get('lang', 'en')
+# Delete user
+@auth.route('/api/delete_user', methods = ['DELETE'])
+def delete_user():
+    lang = request.args.get("lang", "en")
     data = request.get_json()
+
+    # Check if data recieved from json is None
+    if data is None:
+        return jsonify({"error": "Invalid JSON format or no data received"}), 400
+    
     username = data.get('username')
-    password = check_password_hash(data.get('password'))
+    
+    if username not in data:
+        return jsonify({"error": "No username found"}), 400
 
     db = open_db()
 
-    error = None
     user = db.execute(
         'SELECT * FROM user WHERE username = ?', (username,)
     ).fetchone()
 
     if user is None:
-        error = 'Please enter a valid username'
+        return jsonify({"error": f"No user found with user id {username}", "lang": lang}), 404
+    try:
+        db.execute(
+            'DELETE FROM user WHERE user_id = ?', (username,)
+        )
+
+        db.commit()
+        
+        return jsonify({"message": "User deleted successfully!", "lang": lang}), 200
+    except Exception as e:
+        return jsonify({"error": f"{str(e)}"}), 500
+    
+    
+# Login
+@auth.route('/api/login', methods = ['POST'])
+def login():
+    lang = request.args.get('lang', 'en')
+    data = request.get_json()
+
+    # Check if data recieved from json is None
+    if data is None:
+        return jsonify({"error": "Invalid JSON format or no data received"}), 400
+    
+    username = data.get('username')
+    password = data.get('password')
+
+    db = open_db()
+    error = None
+
+    user = db.execute(
+        'SELECT * FROM user WHERE username = ?', (username,)
+    ).fetchone()
+
+    if user is None:
+        error = 'Invalid username'
     elif not check_password_hash(user['password'], password):
-        error = 'Please enter a valid password'
+        error = 'Invalid password'
     
     if error is None:
         session.clear()
         session['user_id'] = user['user_id']
-        fullname = user['fullname']                                                                               
-        return jsonify({"message": f"{fullname}, login successful", "user_id": user['user_id'], "username": user['username'], "lang": lang}), 200
+        fullname = user['fullname']
+
+        return jsonify({
+            "message": f"{fullname}, login successful", 
+            "user_id": user['user_id'], 
+            "username": user['username'], 
+            "lang": lang
+            }), 200
     else:
         return jsonify({"error": error, "lang": lang}), 401
+
+# Logout
+@auth.route('/api/logout', methods = ['POST'])
+def logout():
+    lang = request.args.get('lang', 'en')
+    session.clear()
+    return jsonify({"message": "Logout successfully", "lang": lang}), 200
 
 
 # For user's information to be available to other auth blueprints
@@ -90,9 +145,4 @@ def crud_trips(view):
         return view(**kwargs)
     return wrapped_view
 
-# Logout
-@auth.route('/api/logout', methods = ['POST'])
-def logout():
-    lang = request.args.get('lang', 'en')
-    session.clear()
-    return jsonify({"message": "Logout successfully", "lang": lang}), 200
+
