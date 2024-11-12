@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, request, session, jsonify, current_app, g
+from flask import Blueprint, request, session, jsonify, current_app, g
 from flask_restful import Api, Resource
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
@@ -66,19 +66,35 @@ class Trips(Resource):
         db = open_db()
         data = request.get_json()
 
-        destination = data.get('destination')
+        if not data:
+            error = "No data given"
+            return jsonify({error}), 400
+
+        location = data.get('location')
         date = data.get('date')
         description = data.get('description')
         budget = data.get('budget')
 
-        if not destination or not description:
-            return jsonify({"error": "Destination and description are required"}), 400
-        
-        db.execute(
-            'INSERT INTO trips (destination, date, descrition, budget) VALUES (?, ?, ?, ?)', (destination, date, description, budget,)
-        )
-        db.commit()
-        return jsonify({"message": "Trip was created successfully!"}), 201
+        if not location or not description:
+            error = "location and description are required"
+            return jsonify({error}), 400
+        try:
+            trip = db.execute(
+                'INSERT INTO trips (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
+            )
+            db.commit()
+            trip_id = trip['trip_id']
+
+            response_data = {"message": "Trip was created successfully!",
+                            "trip": {
+                                "trip_id": trip_id,
+                                "location": location,
+                                "date": date,
+                                "description": description,
+                                "budget": budget}}
+            return jsonify(response_data), 201
+        except Exception as e:
+            return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
         
     def put(self, trip_id):
         db = open_db()
@@ -120,7 +136,7 @@ class Trips(Resource):
             'DELETE * FROM trips WHERE trip_id = ?', (trip_id,)
         )
 
-        db.commit()
+        db.session.commit()
 
         return jsonify({"message": "Trip deleted successfully!"}), 200
         
@@ -185,7 +201,7 @@ class Photos(Resource):
             db.execute(
                 'INSERT INTO photos (file_path) VALUES (?)', (file_path)
             )
-            db.commit()
+            db.session.commit()
 
             return jsonify({"message": "Photos uploaded successfully"}), 201
         return jsonify({"error": "Invalid file type or no file found"}), 400
@@ -204,7 +220,7 @@ class Photos(Resource):
             'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
         )
 
-        db.commit()
+        db.session.commit()
 
         return jsonify({"message": "Photo deleted successfully!"}), 200
 
