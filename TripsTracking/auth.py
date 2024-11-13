@@ -8,7 +8,6 @@ auth = Blueprint("auth", __name__, url_prefix='/auth')
 # Register
 @auth.route('/api/register', methods=['POST'])
 def register():
-    lang = request.args.get('lang', 'en')
     data = request.get_json()
 
     # Retrieve and validate user data
@@ -34,17 +33,16 @@ def register():
                 (username, generate_password_hash(password), fullname,)
             )
             db.commit()
-            return jsonify({"message": "Registered successfully", "lang": lang}), 201
+            return jsonify({"message": "Registered successfully"}), 201
         except db.IntegrityError:
             error = f"User {username} is already registered."
     
-    return jsonify({"error": error, "lang": lang}), 400
+    return jsonify({"error": error}), 400
 
 
 # Delete user
 @auth.route('/api/delete_user', methods = ['DELETE'])
 def delete_user():
-    lang = request.args.get("lang", "en")
     data = request.get_json()
 
     # Check if data recieved from json is None
@@ -63,7 +61,7 @@ def delete_user():
     ).fetchone()
 
     if user is None:
-        return jsonify({"error": f"No user found with user id {username}", "lang": lang}), 404
+        return jsonify({"error": f"No user found with user id {username}"}), 404
     try:
         db.execute(
             'DELETE FROM user WHERE user_id = ?', (username,)
@@ -71,7 +69,7 @@ def delete_user():
 
         db.commit()
         
-        return jsonify({"message": "User deleted successfully!", "lang": lang}), 200
+        return jsonify({"message": "User deleted successfully!"}), 200
     except Exception as e:
         return jsonify({"error": f"{str(e)}"}), 500
     
@@ -79,7 +77,6 @@ def delete_user():
 # Login
 @auth.route('/api/login', methods = ['POST'])
 def login():
-    lang = request.args.get('lang', 'en')
     data = request.get_json()
 
     # Check if data recieved from json is None
@@ -110,17 +107,15 @@ def login():
             "message": f"{fullname}, login successful", 
             "user_id": user['user_id'], 
             "username": user['username'], 
-            "lang": lang
             }), 200
     else:
-        return jsonify({"error": error, "lang": lang}), 401
+        return jsonify({"error": error}), 401
 
 # Logout
 @auth.route('/api/logout', methods = ['POST'])
 def logout():
-    lang = request.args.get('lang', 'en')
     session.clear()
-    return jsonify({"message": "Logout successfully", "lang": lang}), 200
+    return jsonify({"message": "Logout successfully"}), 200
 
 
 # For user's information to be available to other auth blueprints

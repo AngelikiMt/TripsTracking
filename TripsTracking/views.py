@@ -20,128 +20,130 @@ def users_info():
             'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
 
-class Trips(Resource):
-    def get(self, trip_id=None):
-        db = open_db()
 
-        if trip_id is None:
-            trips = db.execute(
-                'SELECT trip_id, destination, date, description, budget, timestamp FROM trips ORDER BY date DESC'
-            ).fetchall()
+@views.route('/trip/<trip_id>', methods=['GET'])
+def get(trip_id=None):
+    db = open_db()
 
-            if not trips:
-                return jsonify({"error": "No trips found"}), 404
-            
-            trips_list = []
-            for trip in trips:
-                trips_list.append({
-                    "trip_id": escape(trip["trip_id"]),
-                    "destination": escape(trip["destination"]),
-                    "date": escape(trip["date"]),
-                    "description": escape(trip["description"]),
-                    "budget": escape(trip["budget"]),
-                    "timestamp": escape(trip["timestamp"])
-                })
-            
-            return jsonify(trips_list), 200
+    if trip_id is None:
+        trips = db.execute(
+            'SELECT trip_id, destination, date, description, budget, timestamp FROM trips ORDER BY date DESC'
+        ).fetchall()
+
+        if not trips:
+            return jsonify({"error": "No trips found"}), 404
         
-        else:
-            trip = db.execute(
-                'SELECT trip_id, destination, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
-            ).fetchone()
-
-            if trip is None:
-                return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
-            
-            return jsonify({
+        trips_list = []
+        for trip in trips:
+            trips_list.append({
                 "trip_id": escape(trip["trip_id"]),
                 "destination": escape(trip["destination"]),
                 "date": escape(trip["date"]),
                 "description": escape(trip["description"]),
                 "budget": escape(trip["budget"]),
-                "timestamp": escape(trip["timestamp"]),
-            }), 200       
-    
-    def post(self):
-        db = open_db()
-        data = request.get_json()
-
-        if not data:
-            error = "No data given"
-            return jsonify({error}), 400
-
-        location = data.get('location')
-        date = data.get('date')
-        description = data.get('description')
-        budget = data.get('budget')
-
-        if not location or not description:
-            error = "location and description are required"
-            return jsonify({error}), 400
-        try:
-            trip = db.execute(
-                'INSERT INTO trips (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
-            )
-            db.commit()
-            trip_id = trip['trip_id']
-
-            response_data = {"message": "Trip was created successfully!",
-                            "trip": {
-                                "trip_id": trip_id,
-                                "location": location,
-                                "date": date,
-                                "description": description,
-                                "budget": budget}}
-            return jsonify(response_data), 201
-        except Exception as e:
-            return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
+                "timestamp": escape(trip["timestamp"])
+            })
         
-    def put(self, trip_id):
-        db = open_db()
-        data = request.get_json()
-
-        # Fetch the specific trip for editing
+        return jsonify(trips_list), 200
+    
+    else:
         trip = db.execute(
-            'SELECT * FROM trip where trip_id = ?', (trip_id,)
+            'SELECT trip_id, destination, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
         ).fetchone()
 
-        if not trip:
+        if trip is None:
             return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
         
-        destination = data.get('destination')
-        date = data.get('date')
-        description = data.get('description')
-        budget = data.get('budget')
+        return jsonify({
+            "trip_id": escape(trip["trip_id"]),
+            "destination": escape(trip["destination"]),
+            "date": escape(trip["date"]),
+            "description": escape(trip["description"]),
+            "budget": escape(trip["budget"]),
+            "timestamp": escape(trip["timestamp"]),
+        }), 200
 
-        if not destination or not description:
-            return jsonify({"error": "Description and destination of the trip are required"}), 404
-        
-        db.execute(
-            'UPDATE trips SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
+@views.route('/add_trip', methods=['POST'])
+def post():
+    db = open_db()
+    data = request.get_json()
+
+    if not data:
+        error = "No data given"
+        return jsonify({error}), 400
+
+    location = data.get('location')
+    date = data.get('date')
+    description = data.get('description')
+    budget = data.get('budget')
+
+    if not location or not description:
+        error = "location and description are required"
+        return jsonify({error}), 400
+    try:
+        trip = db.execute(
+            'INSERT INTO trips (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
         )
         db.commit()
-        return jsonify({"message": f"Trip with trip id {trip_id} updated successfully!"})
-        
-    def delete(self, trip_id):
-        db = open_db()
+        trip_id = trip['trip_id']
 
-        trip = db.execute(
-            'SELECT * FROM trips WHERE trip_id = ?', (trip_id,)
-        )
-        
-        if not trip:
-            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+        response_data = {"message": "Trip was created successfully!",
+                        "trip": {
+                            "trip_id": trip_id,
+                            "location": location,
+                            "date": date,
+                            "description": description,
+                            "budget": budget}}
+        return jsonify(response_data), 201
+    except Exception as e:
+        return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
 
-        db.execute(
-            'DELETE * FROM trips WHERE trip_id = ?', (trip_id,)
-        )
+@views.route('/edit_trip', methods=['PUT'])
+def put(trip_id):
+    db = open_db()
+    data = request.get_json()
 
-        db.session.commit()
+    # Fetch the specific trip for editing
+    trip = db.execute(
+        'SELECT * FROM trip where trip_id = ?', (trip_id,)
+    ).fetchone()
 
-        return jsonify({"message": "Trip deleted successfully!"}), 200
-        
-# Retrieve all trips (Read) / Create, Read, Update, Delete a trip
-api.add_resource(Trips, "/trips/", "/trips/<int:trip_id>/")
+    if not trip:
+        return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+    
+    destination = data.get('destination')
+    date = data.get('date')
+    description = data.get('description')
+    budget = data.get('budget')
+
+    if not destination or not description:
+        return jsonify({"error": "Description and destination of the trip are required"}), 404
+    
+    db.execute(
+        'UPDATE trips SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
+    )
+    db.commit()
+    return jsonify({"message": f"Trip with trip id {trip_id} updated successfully!"})
+
+@views.route('/delete_trip', methods=['DELETE'])
+def delete(trip_id):
+    db = open_db()
+
+    trip = db.execute(
+        'SELECT * FROM trips WHERE trip_id = ?', (trip_id,)
+    )
+    
+    if not trip:
+        return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+
+    db.execute(
+        'DELETE * FROM trips WHERE trip_id = ?', (trip_id,)
+    )
+
+    db.commit()
+
+    return jsonify({"message": "Trip deleted successfully!"}), 200
+
 
 # uploading photos
 # Allowed extensions for photos
