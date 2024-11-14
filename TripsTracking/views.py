@@ -3,7 +3,6 @@ from flask_restful import Api, Resource
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
 from .db import open_db
-from datetime import datetime
 import os
 
 views = Blueprint("views", __name__)
@@ -28,7 +27,7 @@ def get(trip_id=None):
 
     if trip_id is None:
         trips = db.execute(
-            'SELECT trip_id, destination, date, description, budget, timestamp FROM trips ORDER BY date DESC'
+            'SELECT trip_id, location, date, description, budget, timestamp FROM trips ORDER BY date DESC'
         ).fetchall()
 
         if not trips:
@@ -38,7 +37,7 @@ def get(trip_id=None):
         for trip in trips:
             trips_list.append({
                 "trip_id": escape(trip["trip_id"]),
-                "destination": escape(trip["destination"]),
+                "location": escape(trip["location"]),
                 "date": escape(trip["date"]),
                 "description": escape(trip["description"]),
                 "budget": escape(trip["budget"]),
@@ -49,7 +48,7 @@ def get(trip_id=None):
     
     else:
         trip = db.execute(
-            'SELECT trip_id, destination, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
+            'SELECT trip_id, location, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
         ).fetchone()
 
         if trip is None:
@@ -57,7 +56,7 @@ def get(trip_id=None):
         
         return jsonify({"message": {
             "trip_id": escape(trip["trip_id"]),
-            "destination": escape(trip["destination"]),
+            "location": escape(trip["location"]),
             "date": escape(trip["date"]),
             "description": escape(trip["description"]),
             "budget": escape(trip["budget"]),
@@ -81,12 +80,15 @@ def post():
     if not location or not description:
         error = "location and description are required"
         return jsonify({"error": error}), 400
+    
     try:
         trip = db.execute(
             'INSERT INTO trips (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
         )
+
         db.commit()
-        trip_id = trip['trip_id']
+
+        trip_id = trip.lastrowid
 
         response_data = {"message": "Trip was created successfully!",
                         "trip": {
@@ -106,28 +108,28 @@ def put(trip_id):
 
     # Fetch the specific trip for editing
     trip = db.execute(
-        "SELECT trip_id, destination, description, date, budget, timestamp FROM trip where trip_id = ?", (trip_id,)
+        "SELECT trip_id, location, description, date, budget, timestamp FROM trip where trip_id = ?", (trip_id,)
     ).fetchone()
 
     if not trip:
         return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
     
-    destination = data.get('destination')
+    location = data.get('location')
     date = data.get('date')
     description = data.get('description')
     budget = data.get('budget')
 
-    if not destination or not description:
-        return jsonify({"error": "Description and destination of the trip are required"}), 400
+    if not location or not description:
+        return jsonify({"error": "Description and location of the trip are required"}), 400
     
     db.execute(
-        'UPDATE trips SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
+        'UPDATE trips SET location = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (location, date, description, budget, trip_id,)
     )
     db.commit()
 
     response = {"message": "Trip updated successfully!",
                 "trip": {
-                    "destination": destination,
+                    "location": location,
                     "description": description,
                     "date": date,
                     "budget": budget
@@ -175,12 +177,14 @@ class Photos(Resource):
                 return jsonify({"error": "No photos found"}), 400
 
             photos_list = []
+
             for photo in photos:
                 photos_list.append({
                     "photo_id" : escape(photo["photo_id"]),
                     "file_path" : escape(photo["file_path"]),
                     "timestamp" : escape(photo["timestamp"])
                 })
+
             return jsonify(photos_list), 200
 
         else:
@@ -213,7 +217,7 @@ class Photos(Resource):
             db.execute(
                 'INSERT INTO photos (file_path) VALUES (?)', (file_path)
             )
-            db.session.commit()
+            db.commit()
 
             return jsonify({"message": "Photos uploaded successfully"}), 201
         return jsonify({"error": "Invalid file type or no file found"}), 400
@@ -232,7 +236,7 @@ class Photos(Resource):
             'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
         )
 
-        db.session.commit()
+        db.commit()
 
         return jsonify({"message": "Photo deleted successfully!"}), 200
 
@@ -254,6 +258,7 @@ class Expense(Resource):
                 return jsonify({"error": "No expenses found"}), 404
             
             all_expenses = []
+
             for expense in expenses:
                 all_expenses.append({
                     "expenses_id": escape(expense["expenses_id"]),
@@ -303,7 +308,7 @@ class Expense(Resource):
             )
             db.commit()
 
-            expenses_id = expense['expenses_id']
+            expenses_id = expense.lastrowid
 
             response_data = {"message": "Expense was created successfully!",
                              "expense": {
@@ -311,6 +316,7 @@ class Expense(Resource):
                                 "expenses_date": expenses_date,
                                 "amount": amount,
                                 "expenses_id": expenses_id}}
+            
             return jsonify(response_data), 201
         except Exception as e:
             return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500

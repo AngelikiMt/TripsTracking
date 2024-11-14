@@ -11,7 +11,7 @@ CREATE TABLE user (
 
 CREATE TABLE trips (
     trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    destination TEXT NOT NULL,
+    location TEXT NOT NULL,
     date TEXT,
     description TEXT NOT NULL,
     budget REAL,
