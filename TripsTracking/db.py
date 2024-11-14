@@ -1,16 +1,19 @@
 import sqlite3
-from flask import current_app, g
+from flask import current_app, g, jsonify
 import click
 from datetime import datetime
 
 # Checks if the db connection exists in g if not sets up the connection
 def open_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
+        try:
+            g.db = sqlite3.connect(
+                current_app.config['DATABASE'],
+                detect_types=sqlite3.PARSE_DECLTYPES
+            )
+            g.db.row_factory = sqlite3.Row
+        except Exception as e:
+            return jsonify({"error": f"{str(e)}"}), 404
     return g.db
 
 # Closes the connection if exists
