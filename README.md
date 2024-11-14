@@ -23,7 +23,7 @@ To install Project TripsTracking, follow these steps:
 
 ## **Usage** :world_map:
 
-This project is not for commersial usage. 
+This project is not for commersial use. 
 
 ## **Contributing** :handshake:
 
@@ -41,7 +41,7 @@ If you would like to contribute to Project TripsTracking, here are some guidelin
 ## **License** :page_with_curl:
 
 
-## **Author** :page_with_curl:
+## **Author** :woman_technologist:
 
 Project TripsTracking was created by **[Angeliki Matta](https://github.com/AngelikiMt)**
 
