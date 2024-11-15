@@ -1,5 +1,7 @@
-DROP TABLE IF EXISTS trips;
+DROP TABLE IF EXISTS trip;
 DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS expense;
+DROP TABLE IF EXISTS photo;
 
 CREATE TABLE user (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -9,9 +11,9 @@ CREATE TABLE user (
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE trips (
+CREATE TABLE trip (
     trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    location TEXT NOT NULL,
+    destination TEXT NOT NULL,
     date TEXT,
     description TEXT NOT NULL,
     budget REAL,
@@ -20,17 +22,17 @@ CREATE TABLE trips (
     FOREIGN KEY (user_id) REFERENCES user (user_id) ON DELETE CASCADE
 );
 
-CREATE TABLE expenses (
-    expenses_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE expense (
+    expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
     trip_id INTEGER,
     amount REAL NOT NULL,
-    expenses_description TEXT,
-    expenses_date TEXT,
+    expense_description TEXT,
+    expense_date TEXT,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (trip_id) REFERENCES trips (trip_id) ON DELETE CASCADE
 );
 
-CREATE TABLE photos (
+CREATE TABLE photo (
     photo_id INTEGER PRIMARY KEY AUTOINCREMENT,
     trip_id INTEGER,
     file_path TEXT REQUIRED NOT NULL,

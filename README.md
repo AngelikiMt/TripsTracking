@@ -25,6 +25,9 @@ To install Project TripsTracking, follow these steps:
 
 This project is not for commersial use. 
 
+For creating the database: 
+Use the init-db command from the terminal by running flask --app trips.py init-db 
+
 ## **Contributing** :handshake:
 
 If you would like to contribute to Project TripsTracking, here are some guidelines:
