@@ -6,8 +6,9 @@ This repository contains the files used for generating the <ins>TripsTracking<in
 
 This application is a medium-sized project supporting travelers creating custom trips or travel agents to level up their businesses and provide a trip app to thei customers. This travel app allows the user to collect and record data such as trip destinations or expenses tracker for having all information gathered and making data-driven decisions. 
 
-TripsTracking is a Python application designed using: 
+TripsTracking is an application designed using: 
 ```
+Python
 Flask web framework
 RESTfull API
 SQLite database
