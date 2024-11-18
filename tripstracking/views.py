@@ -1,15 +1,13 @@
 from flask import Blueprint, request, session, jsonify, current_app, g
-from flask_restful import Api, Resource
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
 from .db import open_db
 import os
 
 views = Blueprint("views", __name__)
-api = Api(views)
 
 @views.before_request
-def users_info():
+def user_info():
     db = open_db()
     user_id = session.get('user_id')
 
@@ -22,12 +20,12 @@ def users_info():
 
 
 @views.route('/trip/<trip_id>', methods=['GET'])
-def get(trip_id=None):
+def get_trip(trip_id=None):
     db = open_db()
 
     if trip_id is None:
         trips = db.execute(
-            'SELECT trip_id, location, date, description, budget, timestamp FROM trips ORDER BY date DESC'
+            'SELECT trip_id, location, date, description, budget, timestamp FROM trip ORDER BY date DESC'
         ).fetchall()
 
         if not trips:
@@ -48,7 +46,7 @@ def get(trip_id=None):
     
     else:
         trip = db.execute(
-            'SELECT trip_id, location, date, description, budget, timestamp FROM trips WHERE trip_id = ?', (trip_id,)
+            'SELECT trip_id, location, date, description, budget, timestamp FROM trip WHERE trip_id = ?', (trip_id,)
         ).fetchone()
 
         if trip is None:
@@ -64,7 +62,7 @@ def get(trip_id=None):
         }}), 200
 
 @views.route('/add_trip', methods=['POST'])
-def post():
+def post_trip():
     db = open_db()
     data = request.get_json()
 
@@ -83,7 +81,7 @@ def post():
     
     try:
         trip = db.execute(
-            'INSERT INTO trips (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
+            'INSERT INTO trip (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
         )
 
         db.commit()
@@ -102,11 +100,10 @@ def post():
         return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
 
 @views.route('/edit_trip', methods=['PUT'])
-def put(trip_id):
+def put_trip(trip_id):
     db = open_db()
     data = request.get_json()
 
-    # Fetch the specific trip for editing
     trip = db.execute(
         "SELECT trip_id, location, description, date, budget, timestamp FROM trip where trip_id = ?", (trip_id,)
     ).fetchone()
@@ -123,7 +120,7 @@ def put(trip_id):
         return jsonify({"error": "Description and location of the trip are required"}), 400
     
     db.execute(
-        'UPDATE trips SET location = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (location, date, description, budget, trip_id,)
+        'UPDATE trip SET location = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (location, date, description, budget, trip_id,)
     )
     db.commit()
 
@@ -142,14 +139,14 @@ def delete(trip_id):
     db = open_db()
 
     trip = db.execute(
-        "SELECT * FROM trips WHERE trip_id = ?", (trip_id,)
+        "SELECT * FROM trip WHERE trip_id = ?", (trip_id,)
     ).fetchone()
     
     if not trip:
         return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
 
     db.execute(
-        "DELETE FROM trips WHERE trip_id = ?", (trip_id,)
+        "DELETE FROM trip WHERE trip_id = ?", (trip_id,)
     )
 
     db.commit()
@@ -157,219 +154,219 @@ def delete(trip_id):
     return jsonify({"message": "Trip deleted successfully!"}), 200
 
 
-# uploading photos
-# Allowed extensions for photos
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-class Photos(Resource):
-    def get_photo(self, photo_id=None):
-        db = open_db()
-        
-        if photo_id is None:
-            photos = db.execute(
-                'SELECT photo_id, file_path, timestamp FROM photos ORDER BY timestamp DESC'
-            )
-            
-            if not photos:
-                return jsonify({"error": "No photos found"}), 400
-
-            photos_list = []
-
-            for photo in photos:
-                photos_list.append({
-                    "photo_id" : escape(photo["photo_id"]),
-                    "file_path" : escape(photo["file_path"]),
-                    "timestamp" : escape(photo["timestamp"])
-                })
-
-            return jsonify(photos_list), 200
-
-        else:
-            photo = db.execute(
-                'SELECT photo_id, file_path, timestamp FROM photos where photo_id = ?', (photo_id,)
-            )
-
-            if photo is None:
-                return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
-
-            return jsonify({
-                "photo_id": escape(photo["Photo_id"]),
-                "file_path": escape(photo["file_path"]),
-                "timestamp": escape(photo["timestamp"])
-                }), 200
-        
-    def post_photo(self):
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
-
-            # Save file path to database
-            db = open_db()
-
-            if not file_path:
-                return jsonify({"error": "file path is required"}), 400
-            
-            db.execute(
-                'INSERT INTO photos (file_path) VALUES (?)', (file_path)
-            )
-            db.commit()
-
-            return jsonify({"message": "Photos uploaded successfully"}), 201
-        return jsonify({"error": "Invalid file type or no file found"}), 400
+@views.route('/trips/photos/<int:photo_id>', methods=['GET'])
+def get_photo(photo_id=None):
+    db = open_db()
     
-    def delete_photo(self, photo_id):
-        db = open_db()
+    if photo_id is None:
+        photos = db.execute(
+            'SELECT photo_id, file_path, timestamp FROM photos ORDER BY timestamp DESC'
+        )
+        
+        if not photos:
+            return jsonify({"error": "No photos found"}), 400
 
+        photos_list = []
+
+        for photo in photos:
+            photos_list.append({
+                "photo_id" : escape(photo["photo_id"]),
+                "file_path" : escape(photo["file_path"]),
+                "timestamp" : escape(photo["timestamp"])
+            })
+
+        return jsonify(photos_list), 200
+
+    else:
         photo = db.execute(
-            'SELECT * FROM photos WHERE photo_id = ?', (photo_id,)
+            'SELECT photo_id, file_path, timestamp FROM photos where photo_id = ?', (photo_id,)
         )
 
-        if not photo:
+        if photo is None:
             return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
-        
-        db.execute(
-            'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
-        )
 
-        db.commit()
-
-        return jsonify({"message": "Photo deleted successfully!"}), 200
-
-
-api.add_resource(Photos, "/api/trips/photos/", "/api/trips/photos/<int:photo_id>")
-
-
-# EXPENSES
-class Expense(Resource):
-    def get_expenses(self, expenses_id=None):
-        db = open_db()
-
-        if expenses_id is None:
-            expenses = db.execute(
-                'SELECT expenses_id, expenses_description, expenses_date, amount, timestamp FROM expenses ORDER BY amount DESC'
-            ).fetchall()
-
-            if not expenses:
-                return jsonify({"error": "No expenses found"}), 404
-            
-            all_expenses = []
-
-            for expense in expenses:
-                all_expenses.append({
-                    "expenses_id": escape(expense["expenses_id"]),
-                    "expenses_description": escape(expense["expenses_description"]),
-                    "expenses_date": escape(expense["expenses_date"]),
-                    "amount": escape(expense["amount"]),
-                    "timestamp": escape(expense["timestamp"])
-                })
-
-            return jsonify(expenses), 200
-        
-        else:
-            expense = db.execute(
-                'SELECT expenses_id, expenses_description, expenses_date, amount, timestamp FROM expenses WHERE expenses_id = ?', (expenses_id,)
-            ).fetchone()
-
-            if expense is None:
-                return jsonify({"error": f"Expense with expense id {expenses_id} not found"}), 404
-            
-            return jsonify({
-                "expenses_id": escape(expense["expenses_id"]),
-                "expenses_description": escape(expense["expenses_description"]),
-                "expenses_date": escape(expense["expenses_date"]),
-                "amount": escape(expense["amount"]),
-                "timestamp": escape(expense["timestamp"])
+        return jsonify({
+            "photo_id": escape(photo["Photo_id"]),
+            "file_path": escape(photo["file_path"]),
+            "timestamp": escape(photo["timestamp"])
             }), 200
 
-    def post_expenses(self):
+@views.route('/trips/photos/post', methods=['POST'])
+def post_photo():
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
         db = open_db()
-        data = request.get_json()
 
-        if not data:
-            error = "No data given"
-            return jsonify({"error": error}), 400
-        
-        expenses_description = data.get('expenses_description')
-        expenses_date = data.get('expenses_date')
-        amount = data.get('amount')
-        
-
-        if not amount:
-            error = "Amount is required"
-            return jsonify({"error": error}), 400
-        try:
-            expense = db.execute(
-                "INSERT INTO expenses (expenses_description, expenses_date, amount) VALUES (?, ?, ?)", (expenses_description, expenses_date, amount)
-            )
-            db.commit()
-
-            expenses_id = expense.lastrowid
-
-            response_data = {"message": "Expense was created successfully!",
-                             "expense": {
-                                "expenses_description": expenses_description,
-                                "expenses_date": expenses_date,
-                                "amount": amount,
-                                "expenses_id": expenses_id}}
-            
-            return jsonify(response_data), 201
-        except Exception as e:
-            return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500
-
-    def put_expenses(self, expenses_id):
-        db = open_db()
-        data = request.get_json()
-
-        expense = db.execute(
-            "SELECT expenses_id, expenses_description, expenses_date, amount, timestamp FROM expenses WHERE expenses_id = ?", (expenses_id,)
-        ).fetchone()
-
-        if not expense:
-            return jsonify({"error": f"Expense with expense id {expenses_id} not found"}), 404
-        
-        expenses_description = data.get('expenses_description')
-        expenses_date = data.get('expenses_date')
-        amount = data.get('amount')
-
-        if not amount:
-            return jsonify({"error": "Amount is required"}), 400
+        if not file_path:
+            return jsonify({"error": "file path is required"}), 400
         
         db.execute(
-            "UPDATE expenses SET expenses_description = ?, expenses_date = ?, amount = ? WHERE expenses_id = ?", (expenses_description, expenses_date, amount, expenses_id)
+            'INSERT INTO photos (file_path) VALUES (?)', (file_path)
         )
-
         db.commit()
 
-        response = {"message": "Expense updated successfully!",
-                    "expense": {
-                        "expenses_description": expenses_description,
-                        "expenses_date": expenses_date,
-                        "amount": amount
-                    }}
+        return jsonify({"message": "Photos uploaded successfully"}), 201
+    return jsonify({"error": "Invalid file type or no file found"}), 400
 
-        return jsonify(response)
 
-    def delete_expense(self, expenses_id):
-        db = open_db()
+@views.route('/trips/photos/delete', methods=['POST'])
+def delete_photo(photo_id):
+    db = open_db()
 
-        expense = db.execute(
-            "SELECT * FROM expenses WHERE expenses_id = ?", (expenses_id,)
-        ).fetchone()
+    photo = db.execute(
+        'SELECT * FROM photos WHERE photo_id = ?', (photo_id,)
+    )
 
-        if not expense:
-            return jsonify({"error": f"Expense with expense id {expenses_id} not found"}), 404
-        
-        db.execute(
-            "DELETE FROM expenses WHERE expenses_id = ?", (expenses_id,)
-        )
-
-        db.commit()
-
-        return jsonify({"message": "Expense deleted successfully!"}), 200
+    if not photo:
+        return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
     
-api.add_resource(Expense, "/api/trips/expenses/", "/api/trips/expenses/<int:expenses_id>")
+    db.execute(
+        'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
+    )
+
+    db.commit()
+
+    return jsonify({"message": "Photo deleted successfully!"}), 200
+
+
+@views.route('/trips/expenses/<int:expense_id>', methods=['GET'])
+def get_expense(expense_id=None):
+    db = open_db()
+
+    if expense_id is None:
+        expenses = db.execute(
+            'SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expense ORDER BY amount DESC'
+        ).fetchall()
+
+        if not expenses:
+            return jsonify({"error": "No expenses found"}), 404
+        
+        all_expenses = []
+
+        for expense in expenses:
+            all_expenses.append({
+                "expense_id": escape(expense["expense_id"]),
+                "expense_description": escape(expense["expense_description"]),
+                "expense_date": escape(expense["expense_date"]),
+                "amount": escape(expense["amount"]),
+                "timestamp": escape(expense["timestamp"])
+            })
+
+        return jsonify(expenses), 200
+    
+    else:
+        expense = db.execute(
+            'SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expense WHERE expense_id = ?', (expense_id,)
+        ).fetchone()
+
+        if expense is None:
+            return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
+        
+        return jsonify({
+            "expense_id": escape(expense["expense_id"]),
+            "expense_description": escape(expense["expense_description"]),
+            "expense_date": escape(expense["expense_date"]),
+            "amount": escape(expense["amount"]),
+            "timestamp": escape(expense["timestamp"])
+        }), 200
+
+
+@views.route('/trips/expenses/post', methods=['POST'])
+def post_expense():
+    db = open_db()
+    data = request.get_json()
+
+    if not data:
+        error = "No data given"
+        return jsonify({"error": error}), 400
+    
+    expense_description = data.get('expense_description')
+    expense_date = data.get('expense_date')
+    amount = data.get('amount')
+    
+    if not amount:
+        error = "Amount is required"
+        return jsonify({"error": error}), 400
+    try:
+        expense = db.execute(
+            "INSERT INTO expenses (expense_description, expense_date, amount) VALUES (?, ?, ?)", (expense_description, expense_date, amount)
+        )
+        db.commit()
+
+        expense_id = expense.lastrowid
+
+        response_data = {"message": "Expense was created successfully!",
+                            "expense": {
+                            "expense_description": expense_description,
+                            "expense_date": expense_date,
+                            "amount": amount,
+                            "expense_id": expense_id}}
+        
+        return jsonify(response_data), 201
+    except Exception as e:
+        return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500
+
+
+@views.route('/trips/expenses/editing/<int:photo_id>', methods=['PUT'])
+def put_expenses(expense_id):
+    db = open_db()
+    data = request.get_json()
+
+    expense = db.execute(
+        "SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expenses WHERE expense_id = ?", (expense_id,)
+    ).fetchone()
+
+    if not expense:
+        return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
+    
+    expense_description = data.get('expense_description')
+    expense_date = data.get('expense_date')
+    amount = data.get('amount')
+
+    if not amount:
+        return jsonify({"error": "Amount is required"}), 400
+    
+    db.execute(
+        "UPDATE expense SET expense_description = ?, expense_date = ?, amount = ? WHERE expense_id = ?", (expense_description, expense_date, amount, expense_id)
+    )
+
+    db.commit()
+
+    response = {"message": "Expense updated successfully!",
+                "expense": {
+                    "expense_description": expense_description,
+                    "expense_date": expense_date,
+                    "amount": amount
+                }}
+
+    return jsonify(response)
+
+
+@views.route('/trips/expenses/delete', methods=['POST'])
+def delete_expense(expense_id):
+    db = open_db()
+
+    expense = db.execute(
+        "SELECT * FROM expense WHERE expense_id = ?", (expense_id,)
+    ).fetchone()
+
+    if not expense:
+        return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
+    
+    db.execute(
+        "DELETE FROM expense WHERE expense_id = ?", (expense_id,)
+    )
+
+    db.commit()
+
+    return jsonify({"message": "Expense deleted successfully!"}), 200
+

@@ -3,14 +3,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
 
-auth = Blueprint("auth", __name__, url_prefix='/auth')
+users = Blueprint("users", __name__, url_prefix='/users')
 
-# Register
-@auth.route('/api/register', methods=['POST'])
+@users.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
 
-    # Retrieve and validate user data
     username = data.get('username')
     password = data.get('password')
     fullname = data.get('fullname')
@@ -25,7 +23,6 @@ def register():
     elif not password:
         error = 'Password is required'
     
-    # Attempt to register user if there are no errors
     if error is None:
         try:
             db.execute(
@@ -40,12 +37,10 @@ def register():
     return jsonify({"error": error}), 400
 
 
-# Delete user
-@auth.route('/api/delete_user', methods = ['DELETE'])
+@users.route('/delete_user', methods = ['DELETE'])
 def delete_user():
     data = request.get_json()
 
-    # Check if data recieved from json is None
     if data is None:
         return jsonify({"error": "Invalid JSON format or no data received"}), 400
     
@@ -74,12 +69,10 @@ def delete_user():
         return jsonify({"error": f"{str(e)}"}), 500
     
     
-# Login
-@auth.route('/api/login', methods = ['POST'])
+@users.route('/login', methods = ['POST'])
 def login():
     data = request.get_json()
 
-    # Check if data recieved from json is None
     if data is None:
         return jsonify({"error": "Invalid JSON format or no data received"}), 400
     
@@ -111,16 +104,15 @@ def login():
     else:
         return jsonify({"error": error}), 401
 
-# Logout
-@auth.route('/api/logout', methods = ['POST'])
+@users.route('/logout', methods = ['POST'])
 def logout():
     session.clear()
     return jsonify({"message": "Logout successfully"}), 200
 
 
-# For user's information to be available to other auth blueprints
-@auth.before_request
-def users_info():
+# For user's information to be available to other users blueprints
+@users.before_request
+def user_info():
     db = open_db()
     user_id = session.get('user_id')
 

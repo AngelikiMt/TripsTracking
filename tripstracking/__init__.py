@@ -10,11 +10,11 @@ def create_app():
 
     with app.app_context():
         from .views import views
-        from .auth import auth
+        from .auth import users
         from .db import init_db_command, close_db
 
         app.register_blueprint(views)
-        app.register_blueprint(auth)
+        app.register_blueprint(users)
         app.teardown_appcontext(close_db)
         app.cli.add_command(init_db_command)
     return app

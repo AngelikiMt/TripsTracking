@@ -1,4 +1,4 @@
-from TripsTracking import create_app
+from tripstracking import create_app
 
 app = create_app()
 
