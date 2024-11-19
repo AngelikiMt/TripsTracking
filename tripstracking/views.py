@@ -1,10 +1,20 @@
-from flask import Blueprint, request, session, jsonify, current_app, g
+from flask import Blueprint, request, session, jsonify, current_app, g, redirect, url_for, render_template
 from markupsafe import escape
 from werkzeug.utils import secure_filename 
 from .db import open_db
 import os
+import functools
 
 views = Blueprint("views", __name__)
+
+def crud_trips(view):
+    '''Ensures that only authenicated users can access any view function. Executes the view function if the user is authenticate, else returns a 401 error.'''
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return jsonify({"message": "User is not logged in"}), 401
+        return view(**kwargs)
+    return wrapped_view
 
 @views.before_request
 def user_info():
@@ -18,8 +28,8 @@ def user_info():
             'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
 
-
 @views.route('/trip/<trip_id>', methods=['GET'])
+@crud_trips
 def get_trip(trip_id=None):
     db = open_db()
 
@@ -62,6 +72,7 @@ def get_trip(trip_id=None):
         }}), 200
 
 @views.route('/add_trip', methods=['POST'])
+@crud_trips
 def post_trip():
     db = open_db()
     data = request.get_json()
@@ -100,6 +111,7 @@ def post_trip():
         return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
 
 @views.route('/edit_trip', methods=['PUT'])
+@crud_trips
 def put_trip(trip_id):
     db = open_db()
     data = request.get_json()
@@ -135,6 +147,7 @@ def put_trip(trip_id):
     return jsonify(response)
 
 @views.route('/delete_trip', methods=['DELETE'])
+@crud_trips
 def delete(trip_id):
     db = open_db()
 
@@ -160,6 +173,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route('/trips/photos/<int:photo_id>', methods=['GET'])
+@crud_trips
 def get_photo(photo_id=None):
     db = open_db()
     
@@ -197,6 +211,7 @@ def get_photo(photo_id=None):
             }), 200
 
 @views.route('/trips/photos/post', methods=['POST'])
+@crud_trips
 def post_photo():
     file = request.files['file']
     if file and allowed_file(file.filename):
@@ -219,6 +234,7 @@ def post_photo():
 
 
 @views.route('/trips/photos/delete', methods=['POST'])
+@crud_trips
 def delete_photo(photo_id):
     db = open_db()
 
@@ -239,6 +255,7 @@ def delete_photo(photo_id):
 
 
 @views.route('/trips/expenses/<int:expense_id>', methods=['GET'])
+@crud_trips
 def get_expense(expense_id=None):
     db = open_db()
 
@@ -281,6 +298,7 @@ def get_expense(expense_id=None):
 
 
 @views.route('/trips/expenses/post', methods=['POST'])
+@crud_trips
 def post_expense():
     db = open_db()
     data = request.get_json()
@@ -317,6 +335,7 @@ def post_expense():
 
 
 @views.route('/trips/expenses/editing/<int:photo_id>', methods=['PUT'])
+@crud_trips
 def put_expenses(expense_id):
     db = open_db()
     data = request.get_json()
@@ -352,6 +371,7 @@ def put_expenses(expense_id):
 
 
 @views.route('/trips/expenses/delete', methods=['POST'])
+@crud_trips
 def delete_expense(expense_id):
     db = open_db()
 
@@ -369,4 +389,3 @@ def delete_expense(expense_id):
     db.commit()
 
     return jsonify({"message": "Expense deleted successfully!"}), 200
-
