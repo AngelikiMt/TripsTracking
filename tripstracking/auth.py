@@ -14,6 +14,20 @@ def crud_trips(view):
         return view(**kwargs)
     return wrapped_view
 
+
+@users.before_request
+def user_info():
+    '''Runs before any users/view function. Selects all user's info from the database and store them in g.'''
+    db = open_db()
+    user_id = session.get('user_id')
+
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = db.execute(
+            'SELECT * FROM user WHERE user_id = ?', (user_id,)
+        ).fetchone()
+
 @users.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -44,8 +58,8 @@ def register():
             except db.IntegrityError:
                 error = f"User {username} is already registered."
         
-        return jsonify({"error": error}), 400
-    return redirect(url_for('auth/registration.html'))
+        return jsonify({"error": error}), 409
+    return render_template('auth/registration.html')
 
 @users.route('/delete_user', methods = ['GET', 'DELETE'])
 @crud_trips
@@ -79,7 +93,7 @@ def delete_user():
             return jsonify({"message": "User deleted successfully!"}), 200
         except Exception as e:
             return jsonify({"error": f"{str(e)}"}), 500
-    return redirect(url_for('auth/delete_user.html'))
+    return render_template('auth/delete_user.html')
     
 @users.route('/login', methods = ['GET', 'POST'])
 def login():
@@ -116,26 +130,13 @@ def login():
                 }), 200
         else:
             return jsonify({"error": error}), 401
-    return redirect(url_for('auth/login.html'))
+    return render_template('auth/login.html')
 
 @users.route('/logout', methods = ['POST'])
 @crud_trips
 def logout():
     session.clear()
     return jsonify({"message": "Logout successfully"}), 200
-
-@users.before_request
-def user_info():
-    '''Runs before any users/view function. Selects all user's info from the database and store them in g.'''
-    db = open_db()
-    user_id = session.get('user_id')
-
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = db.execute(
-            'SELECT * FROM user WHERE user_id = ?', (user_id,)
-        ).fetchone()
 
 
 

@@ -110,7 +110,7 @@ def post_trip():
     except Exception as e:
         return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
 
-@views.route('/edit_trip', methods=['PUT'])
+@views.route('/edit_trip/<int:trip_id>', methods=['PUT'])
 @crud_trips
 def put_trip(trip_id):
     db = open_db()
@@ -146,25 +146,28 @@ def put_trip(trip_id):
     
     return jsonify(response)
 
-@views.route('/delete_trip', methods=['DELETE'])
+@views.route('/delete_trip/<int:trip_id>', methods=['DELETE'])
 @crud_trips
-def delete(trip_id):
-    db = open_db()
+def delete_trip(trip_id):
+    try:
+        db = open_db()
 
-    trip = db.execute(
-        "SELECT * FROM trip WHERE trip_id = ?", (trip_id,)
-    ).fetchone()
-    
-    if not trip:
-        return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+        trip = db.execute(
+            "SELECT * FROM trip WHERE trip_id = ?", (trip_id,)
+        ).fetchone()
+        
+        if not trip:
+            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
 
-    db.execute(
-        "DELETE FROM trip WHERE trip_id = ?", (trip_id,)
-    )
+        db.execute(
+            "DELETE FROM trip WHERE trip_id = ?", (trip_id,)
+        )
 
-    db.commit()
+        db.commit()
 
-    return jsonify({"message": "Trip deleted successfully!"}), 200
+        return jsonify({"message": "Trip deleted successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": f"{str(e)}"}), 500
 
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
