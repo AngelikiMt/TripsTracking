@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} Trips Tracking Application{% endblock %} </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='media/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <meta name="keywords" content="Application, Trips, Holidays, Vacation">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Trips Tracking Application</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+              <div class="navbar-nav">
+                <a class="nav-item nav-link active" href="{{ url_for('views.home') }}">Login</a>
+                <a class="nav-item nav-link active" href="{{ url_for('users.register_user') }}">Registration</a>
+                <a class="nav-item nav-link active" href="{{ url_for('views.get_all_trips') }}">Trips</a>
+                <a class="nav-item nav-link active" href="{{ url_for('views.get_all_expenses') }}">Expenses</a>
+                <a class="nav-item nav-link active" href="{{ url_for('views.get_all_photos') }}">Photos</a>
+              </div>
+            </div>
+          </nav>
+    </header>
+</body>
+</html>

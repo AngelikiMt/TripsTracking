@@ -3,17 +3,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
 
-users = Blueprint("users", __name__, url_prefix='/users')
+users = Blueprint("users", __name__, url_prefix='/users', template_folder='templates/auth')
 
-def crud_trips(view):
-    '''Ensures that only authenicated users can access any view function. Executes the view function if the user is authenticate, else returns a 401 error.'''
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
+def crud_trips(users):
+    '''Ensures that only authenicated users can access any users function. Executes the users function if the user is authenticate, else returns a 401 error.'''
+    @functools.wraps(users)
+    def wrapped_users(**kwargs):
         if g.user is None:
             return jsonify({"message": "User is not logged in"}), 401
-        return view(**kwargs)
-    return wrapped_view
-
+        return users(**kwargs)
+    return wrapped_users
 
 @users.before_request
 def user_info():
@@ -29,7 +28,7 @@ def user_info():
         ).fetchone()
 
 @users.route('/register', methods=['GET', 'POST'])
-def register():
+def register_user():
     if request.method == 'POST':
         data = request.get_json()
 
@@ -59,7 +58,7 @@ def register():
                 error = f"User {username} is already registered."
         
         return jsonify({"error": error}), 409
-    return render_template('auth/registration.html')
+    return redirect(url_for('users.register'))
 
 @users.route('/delete_user', methods = ['GET', 'DELETE'])
 @crud_trips
@@ -93,50 +92,50 @@ def delete_user():
             return jsonify({"message": "User deleted successfully!"}), 200
         except Exception as e:
             return jsonify({"error": f"{str(e)}"}), 500
-    return render_template('auth/delete_user.html')
+    return redirect(url_for('users.register_user'))
     
-@users.route('/login', methods = ['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        data = request.get_json()
+@users.route('/login', methods = ['POST'])
+def login_user():
+    data = request.get_json()
 
-        if data is None:
-            return jsonify({"error": "Invalid JSON format or no data received"}), 400
-        
-        username = data.get('username')
-        password = data.get('password')
+    if data is None:
+        return jsonify({"error": "Invalid JSON format or no data received"}), 400
+    
+    username = data.get('username')
+    password = data.get('password')
 
-        db = open_db()
-        error = None
+    db = open_db()
+    error = None
 
-        user = db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)
-        ).fetchone()
+    user = db.execute(
+        'SELECT * FROM user WHERE username = ?', (username,)
+    ).fetchone()
 
-        if user is None:
-            error = 'Invalid username'
-        elif not check_password_hash(user['password'], password):
-            error = 'Invalid password'
-        
-        if error is None:
-            session.clear()
-            session['user_id'] = user['user_id']
-            fullname = user['fullname']
+    if user is None:
+        error = 'Invalid username'
+    elif not check_password_hash(user['password'], password):
+        error = 'Invalid password'
+    
+    if error is None:
+        session.clear()
+        session['user_id'] = user['user_id']
+        fullname = user['fullname']
 
-            return jsonify({
-                "message": f"{fullname}, login successful", 
-                "user_id": user['user_id'], 
-                "username": user['username'], 
-                }), 200
-        else:
-            return jsonify({"error": error}), 401
-    return render_template('auth/login.html')
+        return jsonify({
+            "message": f"{fullname}, login successful", 
+            "user_id": user['user_id'], 
+            "username": user['username'], 
+            }), 200
+    else:
+        return jsonify({"error": error}), 401
 
-@users.route('/logout', methods = ['POST'])
+@users.route('/logout', methods = ['GET','POST'])
 @crud_trips
 def logout():
-    session.clear()
-    return jsonify({"message": "Logout successfully"}), 200
+    if request.method == 'POST':
+        session.clear()
+        return jsonify({"message": "Logout successfully"}), 200
+    return redirect(url_for('users.login_user'))
 
 
 
