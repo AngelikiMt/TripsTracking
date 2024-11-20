@@ -19,7 +19,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
               <div class="navbar-nav">
-                <a class="nav-item nav-link active" href="{{ url_for('views.home') }}">Login</a>
+                <a class="nav-item nav-link active" href="{{ url_for('users.login_user') }}">Login</a>
                 <a class="nav-item nav-link active" href="{{ url_for('users.register_user') }}">Registration</a>
                 <a class="nav-item nav-link active" href="{{ url_for('views.get_all_trips') }}">Trips</a>
                 <a class="nav-item nav-link active" href="{{ url_for('views.get_all_expenses') }}">Expenses</a>
@@ -28,5 +28,8 @@
             </div>
           </nav>
     </header>
+
+{% block content %}
+{% endblock %}
 </body>
 </html>

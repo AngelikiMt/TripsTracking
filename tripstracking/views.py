@@ -9,14 +9,20 @@ views = Blueprint("views", __name__, template_folder='templates')
 
 @views.route("/", methods=['GET'])
 def home():
-    return render_template('login.html')
+    return render_template('home.html')
 
 def crud_trips(view):
     '''Ensures that only authenicated users can access any view function. Executes the view function if the user is authenticate, else returns a 401 error.'''
     @functools.wraps(view)
     def wrapped_view(**kwargs):
+        json_response = "application/json" in request.headers.get("accept", "")
         if g.user is None:
-            return jsonify({"message": "User is not logged in"}), 401
+            message = "User is not logged in"
+            if json_response:
+                return jsonify({"message": message}), 401
+            flash(message)
+            return redirect(url_for('views.home'))
+        
         return view(**kwargs)
     return wrapped_view
 
@@ -31,6 +37,7 @@ def user_info():
         g.user = db.execute(
             'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
+
 @views.route('/trips/', methods=['GET'])
 @crud_trips
 def get_all_trips():
