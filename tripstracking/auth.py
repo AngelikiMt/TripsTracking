@@ -34,22 +34,27 @@ def register_user():
     if request.method == 'POST' and form.validate():
         json_response = "application/json" in request.headers.get("accept", "")
 
-        data = request.get_json()
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
+
         username = data.get('username')
         password = data.get('password')
         fullname = data.get('fullname')
+        email = data.get('email')
 
         db = open_db()
         error = None
 
-        if (not username) or (not fullname) or (not password):
-            error = 'Fullname, username and password are required'
+        if not all([username, fullname, password, email]):
+            error = 'All fields required.'
         
         if error is None:
             try:
                 db.execute(
-                    "INSERT INTO user (username, password, fullname) VALUES (?, ?, ?)",
-                    (username, generate_password_hash(password), fullname,)
+                    "INSERT INTO user (username, password, fullname, email) VALUES (?, ?, ?, ?)",
+                    (username, generate_password_hash(password), fullname, email)
                 )
 
                 db.commit()
@@ -58,10 +63,10 @@ def register_user():
                 if json_response:
                     return jsonify({"message": message}), 201
                 flash(message)
-                redirect(url_for('users.login'))
+                return redirect(url_for('users.login_user'))
 
             except db.IntegrityError:
-                error = f"User {username} is already registered."
+                error = "Registration failed"
 
         if json_response:
             return jsonify({"error": error}), 409
@@ -76,7 +81,10 @@ def delete_user():
     if request.method == 'DELETE':
         json_response = "application/json" in request.headers.get("accept", "")
 
-        data = request.get_json()
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
 
         if data is None:
             error = "No data given"
@@ -124,15 +132,20 @@ def delete_user():
 def login_user():
     if request.method == 'POST':
         json_response = "application/json" in request.headers.get("accept", "")
-        data = request.get_json()
+
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
+
         db = open_db()
         error = None
 
-        if (not username) or (not password):
-            error = "Username and password are required"
-        
         username = data.get('username')
         password = data.get('password')
+
+        if (not username) or (not password):
+            error = "Username and password are required"
 
         user = db.execute(
             'SELECT * FROM user WHERE username = ?', (username,)
