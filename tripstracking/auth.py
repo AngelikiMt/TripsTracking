@@ -75,61 +75,49 @@ def register_user():
 
     return render_template('register_user.html', form=form)
 
-@users.route('/delete_user', methods = ['GET', 'DELETE'])
+@users.route('/delete_user', methods = ['GET', 'POST'])
 @crud_trips
 def delete_user():
-    if request.method == 'DELETE':
-        json_response = "application/json" in request.headers.get("accept", "")
+    json_response = "application/json" in request.headers.get("accept", "")
+    if request.method == 'POST':
+        db = open_db()
 
         if json_response:
             data = request.get_json()
         else:
             data = request.form
-
-        if data is None:
-            error = "No data given"
-        
         username = data.get('username')
-        
-        if username not in data:
-            error = "No username found"
 
-        db = open_db()
-
-        user = db.execute(
+        try:
+            db.execute(
             'SELECT * FROM user WHERE username = ?', (username,)
-        ).fetchone()
-
-        if user is None:
-            error = f"No user found with user id {username}"
-
-        if error is None:
-            try:
-                db.execute(
-                    'DELETE FROM user WHERE user_id = ?', (username,)
-                )
-
-                db.commit()
-                
-                message = "User deleted successfully!"
-                if json_response:
-                    return jsonify({"message": message}), 200
-                flash(message)
-                return redirect(url_for('users.register_user'))
+            ).fetchone()
             
-            except Exception as e:
-                error = f"{str(e)}"
+            db.execute(
+                'DELETE FROM user WHERE username = ?', (username,)
+            )
+
+            db.commit()
+            session.clear()
+            
+            message = "User deleted successfully!"
+            if json_response:
+                return jsonify({"message": message}), 200
+            flash(message)
+            return redirect(url_for('users.register_user'))
         
+        except Exception as e:
+            error = f"{str(e)}"  
         if json_response:
             return jsonify({"error": error}), 404
         flash(error)
-
-        return redirect(url_for('users.delete_user'))
+        return render_template('delete_user.html', error=error)
     
     return render_template('delete_user.html')
-    
+
 @users.route('/login', methods = ['GET', 'POST'])
 def login_user():
+    form = forms.RegisterForm(request.form)
     if request.method == 'POST':
         json_response = "application/json" in request.headers.get("accept", "")
 
@@ -176,9 +164,9 @@ def login_user():
         if json_response:
             return jsonify({"error": error}), 401
         flash(error)
-        return redirect(url_for('users.login_user'))
+        return redirect(url_for('users.login_user', error=error))
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 @users.route('/logout', methods = ['GET','POST'])
 @crud_trips
