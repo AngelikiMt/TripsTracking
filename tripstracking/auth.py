@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, g, jsonify, redirect, url_for, re
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import open_db
 import functools
+from .static import forms
 
 users = Blueprint("users", __name__, url_prefix='/users', template_folder='templates/auth')
 
@@ -29,7 +30,8 @@ def user_info():
 
 @users.route('/register', methods=['GET', 'POST'])
 def register_user():
-    if request.method == 'POST':
+    form = forms.RegisterForm(request.form)
+    if request.method == 'POST' and form.validate():
         json_response = "application/json" in request.headers.get("accept", "")
 
         data = request.get_json()
@@ -66,7 +68,7 @@ def register_user():
         flash(error)
         return redirect(url_for('users.register_user'))
 
-    return render_template('register_user.html')
+    return render_template('register_user.html', form=form)
 
 @users.route('/delete_user', methods = ['GET', 'DELETE'])
 @crud_trips
@@ -167,7 +169,7 @@ def login_user():
 
 @users.route('/logout', methods = ['GET','POST'])
 @crud_trips
-def logout():
+def logout_user():
     if request.method == 'POST':
         json_response = "application/json" in request.headers.get("accept", "")
         session.clear()
