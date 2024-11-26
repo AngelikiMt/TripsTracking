@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %} Trips | Trips Tracking {% endblock %}
+
+{% block content %}
+
+{% if g.user %}
+{% for trip in trips %}
+<h1>{{ trip['destinatiopn'] }}</h1>
+<h2>{{ trip['date'] }}</h2>
+<h2>{{ trip['description'] }}</h2>
+<h2>{{ trip['budget'] }}</h2>
+<h2>{{ trip['created'] }}</h2>
+{% endfor %}
+{% endif %}
+
+<br><br>
+{% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <h3>{{ message }}</h3>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

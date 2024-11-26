@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %} Expenses | Trips Tracking {% endblock %}
+
+{% block content %}
+
+{% if g.user %}
+{% for expense in expenses %}
+<h1>{{ expense['expense_description'] }}</h1>
+<h2>{{ expense['amount'] }}</h2>
+<h2>{{ expense['trip_id'] }}</h2>
+<h2>{{ expense['expense_date'] }}</h2>
+<h2>{{ expense['created'] }}</h2>
+{% endfor %}
+{% endif %}
+
+<br><br>
+{% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <h3>{{ message }}</h3>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

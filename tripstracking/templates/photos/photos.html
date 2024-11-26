@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %} Photos | Trips Tracking {% endblock %}
+
+{% block content %}#
+
+{% if g.user %}
+{% for photo in photos %}
+<h1>{{ photo['trip_id'] }}</h1>
+<h2>{{ photo['file_path'] }}</h2>
+<h2>{{ photo['created'] }}</h2>
+{% endfor %}
+{% endif %}
+
+<br><br>
+{% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <h3>{{ message }}</h3>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

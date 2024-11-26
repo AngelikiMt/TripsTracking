@@ -9,7 +9,9 @@ views = Blueprint("views", __name__, template_folder='templates')
 
 @views.route("/", methods=['GET'])
 def home():
-    return render_template('home.html')
+    if g.user:
+        username = g.user['username']
+    return render_template('home.html', username=username)
 
 def crud_trips(view):
     '''Ensures that only authenicated users can access any view function. Executes the view function if the user is authenticate, else returns a 401 error.'''
@@ -45,7 +47,7 @@ def get_all_trips():
     json_response = "application/json" in request.headers.get("accept", "")
 
     trips = db.execute(
-        'SELECT trip_id, location, date, description, budget, timestamp FROM trip ORDER BY date DESC'
+        'SELECT trip_id, destination, date, description, budget, created FROM trip ORDER BY date DESC'
     ).fetchall()
 
     if not trips:
@@ -59,17 +61,17 @@ def get_all_trips():
     for trip in trips:
         trips_list.append({
             "trip_id": escape(trip["trip_id"]),
-            "location": escape(trip["location"]),
+            "destination": escape(trip["destination"]),
             "date": escape(trip["date"]),
             "description": escape(trip["description"]),
             "budget": escape(trip["budget"]),
-            "timestamp": escape(trip["timestamp"])
+            "created": escape(trip["created"])
         })
 
     if json_response:
         respond = {"trips": trips_list}
         return jsonify(respond), 200
-    return render_template('trips.html', trips=trips_list)
+    return render_template('trips/trips.html', trips=trips_list)
 
 @views.route('/trip/<int:trip_id>', methods=['GET'])
 @crud_trips
@@ -78,7 +80,7 @@ def get_trip(trip_id):
     json_response = "application/json" in request.headers.get("accept", "")
 
     trip = db.execute(
-        'SELECT trip_id, location, date, description, budget, timestamp FROM trip WHERE trip_id = ?', (trip_id,)
+        'SELECT trip_id, destination, date, description, budget, created FROM trip WHERE trip_id = ?', (trip_id,)
     ).fetchone()
 
     if trip is None:
@@ -90,18 +92,18 @@ def get_trip(trip_id):
     
     trip_details = {
         "trip_id": escape(trip["trip_id"]),
-        "location": escape(trip["location"]),
+        "destination": escape(trip["destination"]),
         "date": escape(trip["date"]),
         "description": escape(trip["description"]),
         "budget": escape(trip["budget"]),
-        "timestamp": escape(trip["timestamp"])
+        "created": escape(trip["created"])
     }
     
     if json_response:
         respond = {"trip": trip_details}
         return jsonify(respond), 200
     else:
-        return render_template('trip.html', trip=trip_details)
+        return render_template('trips/trip.html', trip=trip_details)
 
 @views.route('/add_trip', methods=['POST'])
 @crud_trips
@@ -118,13 +120,13 @@ def post_trip():
         flash(message)
         return redirect(url_for("views.post_trip"))
 
-    location = data.get('location')
+    destination = data.get('destination')
     date = data.get('date')
     description = data.get('description')
     budget = data.get('budget')
 
-    if not location or not description:
-        error = "location and description are required"
+    if not destination or not description:
+        error = "destination and description are required"
         if json_response:
             return jsonify({"error": error}), 400
         flash(error)
@@ -132,7 +134,7 @@ def post_trip():
     
     try:
         trip = db.execute(
-            'INSERT INTO trip (location, date, description, budget) VALUES (?, ?, ?, ?)', (location, date, description, budget,)
+            'INSERT INTO trip (destination, date, description, budget) VALUES (?, ?, ?, ?)', (destination, date, description, budget,)
         )
 
         db.commit()
@@ -140,7 +142,7 @@ def post_trip():
         trip_id = trip.lastrowid
 
         trip_details = {"trip_id": trip_id,
-                        "location": location,
+                        "destination": destination,
                         "date": date,
                         "description": description,
                         "budget": budget}
@@ -155,7 +157,7 @@ def post_trip():
         if json_response:
             return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
         flash(f"{str(e)}")
-        return render_template('trip.html')
+        return render_template('trips/trip.html')
 
 @views.route('/edit_trip/<int:trip_id>', methods=['PUT'])
 @crud_trips
@@ -165,7 +167,7 @@ def put_trip(trip_id):
     data = request.get_json()
 
     trip = db.execute(
-        "SELECT trip_id, location, description, date, budget, timestamp FROM trip where trip_id = ?", (trip_id,)
+        "SELECT trip_id, destination, description, date, budget, created FROM trip where trip_id = ?", (trip_id,)
     ).fetchone()
 
     if not trip:
@@ -175,24 +177,24 @@ def put_trip(trip_id):
         flash(message)
         return redirect(url_for('views.put_trip'))
 
-    location = data.get('location')
+    destination = data.get('destination')
     date = data.get('date')
     description = data.get('description')
     budget = data.get('budget')
 
-    if not location or not description:
-        error = "The location and description of the trip are required"
+    if not destination or not description:
+        error = "The destination and description of the trip are required"
         if json_response:
             return jsonify({"error": error}), 400
         flash(error)
         return redirect(url_for("views.put_trip"))
     
     db.execute(
-        'UPDATE trip SET location = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (location, date, description, budget, trip_id,)
+        'UPDATE trip SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
     )
     db.commit()
 
-    trip_details = {"location": location,
+    trip_details = {"destination": destination,
                     "description": description,
                     "date": date,
                     "budget": budget
@@ -205,7 +207,7 @@ def put_trip(trip_id):
         return jsonify(response)
     else:
         flash(message)
-        return render_template('trip.html', trip=trip_details)
+        return render_template('trips/trip.html', trip=trip_details)
 
 @views.route('/delete_trip/<int:trip_id>', methods=['DELETE'])
 @crud_trips
@@ -256,7 +258,7 @@ def get_all_photos():
     json_response = "application/json" in request.headers.get("accept", "")
     
     photos = db.execute(
-        'SELECT photo_id, file_path, timestamp FROM photos ORDER BY timestamp DESC'
+        'SELECT photo_id, file_path, created FROM photo ORDER BY created DESC'
     )
     
     if not photos:
@@ -272,7 +274,7 @@ def get_all_photos():
         photos_list.append({
             "photo_id" : escape(photo["photo_id"]),
             "file_path" : escape(photo["file_path"]),
-            "timestamp" : escape(photo["timestamp"])
+            "created" : escape(photo["created"])
         })
 
     if json_response:
@@ -287,7 +289,7 @@ def get_photo(photo_id):
     json_response = "application/json" in request.headers.get("accept", "")
 
     photo = db.execute(
-        'SELECT photo_id, file_path, timestamp FROM photos where photo_id = ?', (photo_id,)
+        'SELECT photo_id, file_path, created FROM photo where photo_id = ?', (photo_id,)
     )
 
     if photo is None:
@@ -300,7 +302,7 @@ def get_photo(photo_id):
     photo_details = {
             "photo_id": escape(photo["Photo_id"]),
             "file_path": escape(photo["file_path"]),
-            "timestamp": escape(photo["timestamp"])
+            "created": escape(photo["created"])
             }
     if json_response:
         response = {"photo": photo_details}
@@ -326,7 +328,7 @@ def post_photo():
             return redirect(url_for('views.post_photo'))
         
         db.execute(
-            'INSERT INTO photos (file_path) VALUES (?)', (file_path)
+            'INSERT INTO photo (file_path) VALUES (?)', (file_path)
         )
         db.commit()
 
@@ -346,7 +348,7 @@ def delete_photo(photo_id):
     db = open_db()
 
     photo = db.execute(
-        'SELECT * FROM photos WHERE photo_id = ?', (photo_id,)
+        'SELECT * FROM photo WHERE photo_id = ?', (photo_id,)
     )
 
     if not photo:
@@ -356,7 +358,7 @@ def delete_photo(photo_id):
         return redirect(url_for('views.get_all_photos'))
     
     db.execute(
-        'DELETE FROM photos WHERE photo_id = ?', (photo_id,)
+        'DELETE FROM photo WHERE photo_id = ?', (photo_id,)
     )
 
     db.commit()
@@ -373,7 +375,7 @@ def get_all_expenses():
     json_response = "application/json" in request.headers.get("accept", "")
 
     expenses = db.execute(
-        'SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expense ORDER BY amount DESC'
+        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense ORDER BY amount DESC'
     ).fetchall()
 
     if not expenses:
@@ -390,13 +392,13 @@ def get_all_expenses():
             "expense_description": escape(expense["expense_description"]),
             "expense_date": escape(expense["expense_date"]),
             "amount": escape(expense["amount"]),
-            "timestamp": escape(expense["timestamp"])
+            "created": escape(expense["created"])
         })
 
     if json_response:
         respond = {"expenses": all_expenses}
         return jsonify(respond), 200
-    return render_template('expenses.htm', expenses=all_expenses)
+    return render_template('expenses.html', expenses=all_expenses)
     
 @views.route('/trips/expenses/<int:expense_id>', methods=['GET'])
 @crud_trips
@@ -405,7 +407,7 @@ def get_expense(expense_id=None):
     json_response = "application/json" in request.headers.get("accept", "")
 
     expense = db.execute(
-        'SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expense WHERE expense_id = ?', (expense_id,)
+        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense WHERE expense_id = ?', (expense_id,)
     ).fetchone()
 
     if expense is None:
@@ -419,7 +421,7 @@ def get_expense(expense_id=None):
         "expense_description": escape(expense["expense_description"]),
         "expense_date": escape(expense["expense_date"]),
         "amount": escape(expense["amount"]),
-        "timestamp": escape(expense["timestamp"])
+        "created": escape(expense["created"])
     }
     if json_response:
         response = {"expense": expense_details}
@@ -473,7 +475,7 @@ def post_expense():
         if json_response:
             return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500
         flash(f"{str(e)}")
-        return render_template('expense.html')
+    return render_template('post_expense.html')
 
 @views.route('/trips/edit_expense/<int:expense_id>', methods=['PUT'])
 @crud_trips
@@ -483,7 +485,7 @@ def put_expenses(expense_id):
     data = request.get_json()
 
     expense = db.execute(
-        "SELECT expense_id, expense_description, expense_date, amount, timestamp FROM expenses WHERE expense_id = ?", (expense_id,)
+        "SELECT expense_id, expense_description, expense_date, amount, created FROM expenses WHERE expense_id = ?", (expense_id,)
     ).fetchone()
 
     if not expense:

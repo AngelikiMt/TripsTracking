@@ -78,8 +78,8 @@ def register_user():
 @users.route('/delete_user', methods = ['GET', 'POST'])
 @crud_trips
 def delete_user():
-    json_response = "application/json" in request.headers.get("accept", "")
     if request.method == 'POST':
+        json_response = "application/json" in request.headers.get("accept", "")
         db = open_db()
 
         if json_response:
@@ -182,7 +182,4 @@ def logout_user():
         return redirect(url_for('users.login_user'))
     
     return render_template('logout.html')
-
-
-
 
