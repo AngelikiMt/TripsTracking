@@ -1,8 +1,19 @@
 {% extends "base.html" %}
-{% block title %} Photos | Trips Tracking {% endblock %}
+{% block title %} Photo | Trips Tracking {% endblock %}
 
-{% block content %}#
-    <h2>Photos are:</h2><br>
-    {{ value }}
-    <br>
+{% block content %}
+
+<div class="container mt-5">
+    <div class="card mx-auto" style="width: 24rem;">
+        <img src="{{ photo.file_path }}" class="card-img-top" alt="Photo {{ photo['photo_id'] }}">
+        <div class="card-body">
+            <h5 class="card-title">Photo ID: {{ photo['photo_id'] }}</h5>
+            <p class="card-text">Trip ID: {{ photo['trip_id'] }}</p>
+            <p class="card-text">File Path: {{ photo['file_path'] }}</p>
+            <p class="card-text">Created: {{ photo['created'] }}</p>
+            <a href="/photos/photos.html" class="btn btn-secondary">Back to All Photos</a>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

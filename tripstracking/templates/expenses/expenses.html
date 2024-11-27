@@ -1,17 +1,31 @@
 {% extends "base.html" %}
-{% block title %} Expenses | Trips Tracking {% endblock %}
+{% block title %} All Expenses | Trips Tracking {% endblock %}
 
 {% block content %}
 
-{% if g.user %}
-{% for expense in expenses %}
-<h1>{{ expense['expense_description'] }}</h1>
-<h2>{{ expense['amount'] }}</h2>
-<h2>{{ expense['trip_id'] }}</h2>
-<h2>{{ expense['expense_date'] }}</h2>
-<h2>{{ expense['created'] }}</h2>
-{% endfor %}
-{% endif %}
+<div class="container mt-5">
+    <h2 class="text-center">All Expenses</h2>
+    <div class="row">
+
+        {% for expense in expenses %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Expense for {{ expense['trip_id'] }}</h5>
+                    <p class="card-text">
+                        Date: {{ expense['expense_date'] }}<br>
+                        Description: {{ expense['expense_description'] }}<br>
+                        Budget: €{{ expense['amount'] }}<br>
+                        Created: {{ expense['created'] }}<br>
+                    </p>
+                    <p class="card-text">{{ expense['expense_description'] }}</p>
+                    <a href="/expenses/{{ expense['expense_id'] }}" class="btn btn-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 
 <br><br>
 {% with messages = get_flashed_messages()%}

@@ -1,8 +1,21 @@
 {% extends "base.html" %}
-{% block title %} Expenses | Trips Tracking {% endblock %}
+{% block title %} Expense | Trips Tracking {% endblock %}
 
 {% block content %}
-    <h2>Expenses are:</h2><br>
-    {{ value }}
-    <br>
+
+<div class="container mt-5">
+    <div class="card mx-auto" style="width: 24rem;">
+        <div class="card-body">
+            <h5 class="card-title">Expense for {{ expense['trip_id'] }}</h5>
+            <p class="card-text">
+                <strong>Date:</strong> {{ expense['expense_date'] }}<br>
+                <strong>Amount:</strong> €{{ expense['amount'] }}<br>
+                <strong>Description:</strong> {{ expense['expense_description'] }}
+                <strong>Created:</strong> {{ expense['created'] }}
+            </p>
+            <a href="/trips" class="btn btn-secondary">Back to All Expenses</a>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

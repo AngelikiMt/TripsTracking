@@ -1,4 +1,47 @@
 {% extends "base.html" %}
-{% block title %} Post Expense | Trips Tracking {% endblock %}
+{% block title %} Post Expenses | Trips Tracking {% endblock %}
 
 {% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>Add your expenses!</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('views.post_expense') }}" method="POST" target="_self">
+
+                        <div class="mb-3">
+                            <label for="budget" class="form-label">Budget(€)</label>
+                            <input type="number" class="form-control" id="budget" name="amount" placeholder="Enter your budget" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="expense_description" rows="4" placeholder="Describe your expense..." required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" name="expense_date" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Post Expense</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <h3>{{ message }}</h3>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

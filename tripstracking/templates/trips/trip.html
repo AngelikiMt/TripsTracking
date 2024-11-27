@@ -2,7 +2,20 @@
 {% block title %} Trip | Trips Tracking {% endblock %}
 
 {% block content %}
-    <h2>Trips are:</h2><br>
-    {{ value }}
-    <br>
+
+<div class="container mt-5">
+    <div class="card mx-auto" style="width: 24rem;">
+        <div class="card-body">
+            <h5 class="card-title">Trip to {{ trip['destination'] }}</h5>
+            <p class="card-text">
+                <strong>Date:</strong> {{ trip['date'] }}<br>
+                <strong>Budget:</strong> €{{ trip['budget'] }}<br>
+                <strong>Description:</strong> {{ trip['description'] }}
+                <strong>Created:</strong> {{ trip['created'] }}
+            </p>
+            <a href="/trips" class="btn btn-secondary">Back to All Trips</a>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

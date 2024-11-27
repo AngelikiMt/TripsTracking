@@ -105,7 +105,7 @@ def get_trip(trip_id):
     else:
         return render_template('trips/trip.html', trip=trip_details)
 
-@views.route('/add_trip', methods=['POST', 'GET'])
+@views.route('/add_trip', methods=['GET', 'POST'])
 @crud_trips
 def post_trip():
     if request.method == 'POST':
@@ -257,17 +257,13 @@ def allowed_file(filename):
 @crud_trips
 def get_all_photos():
     db = open_db()
-    json_response = "application/json" in request.headers.get("accept", "")
     
     photos = db.execute(
         'SELECT photo_id, file_path, created FROM photo ORDER BY created DESC'
-    )
+    ).fetchall()
     
     if not photos:
-        error = "No photos found"
-        if json_response:
-            return jsonify({"error": error}), 400
-        flash(error)
+        flash("No photos found")
         return redirect(url_for('views.post_photo'))
 
     photos_list = []
@@ -279,24 +275,18 @@ def get_all_photos():
             "created" : escape(photo["created"])
         })
 
-    if json_response:
-        response = {"photos": photos_list}
-        return jsonify(response), 200
     return render_template('photos.html', photos=photos_list)
 
 @views.route('/trips/photos/<int:photo_id>', methods=['GET'])
 @crud_trips
 def get_photo(photo_id):
     db = open_db()
-    json_response = "application/json" in request.headers.get("accept", "")
 
     photo = db.execute(
         'SELECT photo_id, file_path, created FROM photo where photo_id = ?', (photo_id,)
-    )
+    ).fetchone()
 
     if photo is None:
-        if json_response:
-            return jsonify({"error": f"Photo with photo id {photo_id} not found"}), 404
         flash("No photo found")
         return redirect(url_for('views.get_all_photos'))
     
@@ -305,16 +295,13 @@ def get_photo(photo_id):
             "file_path": escape(photo["file_path"]),
             "created": escape(photo["created"])
             }
-    if json_response:
-        response = {"photo": photo_details}
-        return jsonify(response), 200
+
     return render_template('photo.html', photo=photo_details)
 
-@views.route('/trips/add_photos', methods=['POST', 'GET'])
+@views.route('/trips/add_photos', methods=['GET', 'POST'])
 @crud_trips
 def post_photo():
     if request.method == 'POST':
-        json_response = "application/json" in request.headers.get("accept", "")
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -324,10 +311,7 @@ def post_photo():
             db = open_db()
 
             if not file_path:
-                error = "file path is required"
-                if json_response:
-                    return jsonify({"error": error}), 400
-                flash(error)
+                flash("file path is required")
                 return redirect(url_for('views.post_photo'))
             
             db.execute(
@@ -335,16 +319,10 @@ def post_photo():
             )
             db.commit()
 
-            message = "Photos uploaded successfully"
-            if json_response:
-                return jsonify({"message": message, 
-                                "file_path": file_path}), 201
-            flash(message)
+            flash("Photos uploaded successfully")
             return render_template('photos/photo.html', file_path=file_path)
-        error = "Invalid file type or no file found"
-        if json_response:
-            return jsonify({"error": error}), 400
-        flash(error)
+        flash("Invalid file type or no file found")
+        return redirect(url_for('views.post_photo'))
     return render_template('photos/post_photo.html')
 
 @views.route('/trips/delete_photo/<int_photo_id>', methods=['POST'])

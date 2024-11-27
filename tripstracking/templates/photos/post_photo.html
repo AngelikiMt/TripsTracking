@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %} Post Photos | Trips Tracking {% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>Post Your Photos!</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('views.post_photo') }}" method="POST" enctype="multipart/form-data" target="_self">
+
+                        <div class="mb-3">
+                            <label for="photos" class="form-label">Upload Photos</label>
+                            <input type="file" class="form-control" id="photos" name="photos" accept="image/*" multiple>
+                            <div class="form-text">You can upload multiple photos.</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Post Photo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages()%}
+    {% for message in messages %}
+    <h3>{{ message }}</h3>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}
