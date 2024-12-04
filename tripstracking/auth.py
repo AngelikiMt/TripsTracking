@@ -78,25 +78,23 @@ def register_user():
 @users.route('/delete_user', methods = ['GET', 'POST'])
 @crud_trips
 def delete_user():
+    if 'user_id' not in session:
+        flash("You need to be logged in to delete your account.")
+        return redirect(url_for('users.login'))
+
+    user_id = session['user_id'] 
+    json_response = "application/json" in request.headers.get("accept", "")
+    db = open_db()
+
+    user = db.execute(
+        "SELECT * FROM user WHERE user_id = ?", (user_id,)
+    ).fetchone()
+
     if request.method == 'POST':
-        json_response = "application/json" in request.headers.get("accept", "")
-        db = open_db()
-
-        if json_response:
-            data = request.get_json()
-        else:
-            data = request.form
-        username = data.get('username')
-
         try:
             db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)
-            ).fetchone()
-            
-            db.execute(
-                'DELETE FROM user WHERE username = ?', (username,)
+                'DELETE FROM user WHERE user_id = ?', (user_id,)
             )
-
             db.commit()
             session.clear()
             
@@ -107,13 +105,12 @@ def delete_user():
             return redirect(url_for('users.register_user'))
         
         except Exception as e:
-            error = f"{str(e)}"  
+            error = f"Failed to delete user: {str(e)}"  
         if json_response:
             return jsonify({"error": error}), 404
         flash(error)
-        return render_template('delete_user.html', error=error)
-    
-    return render_template('delete_user.html')
+        return render_template('delete_user.html', user_id=user_id, user=user)
+    return render_template('delete_user.html', user_id=user_id, user=user)
 
 @users.route('/login', methods = ['GET', 'POST'])
 def login_user():

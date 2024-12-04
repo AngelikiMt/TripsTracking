@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %} Delete Trip | Trips Tracking {% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <h2 class="text-center">Delete Trip</h2>
+
+    <div class="alert alert-warning">
+        <p>Are you sure you want to delete the trip to </strong> {{ trip.destination }}?</p>
+        <ul>
+            <li><strong>Date:</strong> {{ trip.date }}</li>
+            <li><strong>Description:</strong> {{ trip.description }}</li>
+        </ul>
+    </div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Delete Trip</button>
+        <a href="{{ url_for('views.get_all_trips') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+
+{% with messages = get_flashed_messages() %}
+    {% for message in messages %}
+    <div class="alert alert-info mt-3">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

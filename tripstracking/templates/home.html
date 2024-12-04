@@ -2,10 +2,39 @@
 {% block title %} Home | Trips Tracking {% endblock %}
 
 {% block content %}
-{% if username %}
-<h1>Hello, {{ username }}!</h1>
-{% else %}
-<h1>Hello!</h1>
-{% endif %}
+<div class="container my-4">
+    {% if username %}
+        <div class="text-center">
+            <h1 class="display-4">Hello, {{ username }}!</h1>
+        </div>
+
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="list-group">
+                    <a href="{{ url_for('users.logout_user') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                    <a href="{{ url_for('users.delete_user') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-trash"></i> Delete User
+                    </a>
+                    <a href="{{ url_for('views.post_trip') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-plus-circle"></i> Post Trip
+                    </a>
+                    <a href="{{ url_for('views.post_photo') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-image"></i> Post Photo
+                    </a>
+                    <a href="{{ url_for('views.post_expense') }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-cash-stack"></i> Post Expense
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center">
+            <h1 class="display-4">Hello!</h1>
+            <p class="lead">Please log in to access your account and manage your trips.</p>
+        </div>
+    {% endif %}
+</div>
 
 {% endblock %}

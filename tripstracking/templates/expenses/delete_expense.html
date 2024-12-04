@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %} Delete Expense | Trips Tracking {% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <h2 class="text-center">Delete Expense</h2>
+
+    <div class="alert alert-warning">
+        <p>Are you sure you want to delete the following expese?</p>
+        <ul>
+            <li><strong>Date:</strong> {{ expense.expense_date }}</li>
+            <li><strong>Description:</strong> {{ expense.expense_description }}</li>
+            <li><strong>Amount:</strong> {{ expense.amount }}</li>
+        </ul>
+    </div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Delete expense</button>
+        <a href="{{ url_for('views.get_all_expenses') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+
+{% with messages = get_flashed_messages() %}
+    {% for message in messages %}
+    <div class="alert alert-info mt-3">{{ message }}</div>
+    {% endfor %}
+{% endwith %}
+
+{% endblock %}

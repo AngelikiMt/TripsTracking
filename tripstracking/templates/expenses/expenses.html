@@ -3,34 +3,71 @@
 
 {% block content %}
 
+
 <div class="container mt-5">
     <h2 class="text-center">All Expenses</h2>
-    <div class="row">
-
-        {% for expense in expenses %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Expense for {{ expense['trip_id'] }}</h5>
-                    <p class="card-text">
-                        Date: {{ expense['expense_date'] }}<br>
-                        Description: {{ expense['expense_description'] }}<br>
-                        Budget: €{{ expense['amount'] }}<br>
-                        Created: {{ expense['created'] }}<br>
-                    </p>
-                    <p class="card-text">{{ expense['expense_description'] }}</p>
-                    <a href="/expenses/{{ expense['expense_id'] }}" class="btn btn-primary">View Details</a>
-                </div>
-            </div>
+        <div id="expense-alert" class="alert alert-warning d-none" role="alert">
+            No expenses found.
         </div>
-        {% endfor %}
-    </div>
+    <div class="row" id="expenses-container"></div>
+    <a href="{{ url_for('views.post_expense') }}" class="btn btn-secondary">Add your expenses!</a>
 </div>
 
-<br><br>
-{% with messages = get_flashed_messages()%}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    // Fetch expenses from the backend and display them
+    async function fetchExpenses() {
+        try {
+            const response = await fetch('/trips/expenses', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 404) {
+                document.getElementById('expense-alert').classList.remove('d-none');
+                return;
+            }
+
+            const data = await response.json();
+            const expenses = data.expenses;
+
+            const container = document.getElementById('expenses-container');
+            container.innerHTML = ""; // Clear container
+
+            expenses.forEach(expense => {
+                // Create Bootstrap card for each expense
+                const expenseCard = `
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Expense Id: ${expense.expense_id}</h5>
+                                <p class="card-text">
+                                    <strong>Date:</strong> ${expense.expense_date}<br>
+                                    <strong>Budget:</strong> €${expense.amount}<br>
+                                    <strong>Description:</strong> ${expense.expense_description}
+                                </p>
+                                <small class="text-muted">Created: ${expense.created}</small>
+                                <a href="/trips/expenses/${expense.expense_id}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>`;
+                container.innerHTML += expenseCard;
+            });
+        } catch (error) {
+            console.error('Error fetching expenses:', error);
+        }
+    }
+
+    // Run fetchExpenses on page load
+    window.onload = fetchExpenses;
+</script>
+
+{% with messages = get_flashed_messages() %}
     {% for message in messages %}
-    <h3>{{ message }}</h3>
+    <div class="alert alert-info mt-3">{{ message }}</div>
     {% endfor %}
 {% endwith %}
 

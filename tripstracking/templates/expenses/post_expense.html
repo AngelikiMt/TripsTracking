@@ -2,45 +2,100 @@
 {% block title %} Post Expenses | Trips Tracking {% endblock %}
 
 {% block content %}
+
 <div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white text-center">
-                    <h4>Add your expenses!</h4>
-                </div>
-                <div class="card-body">
-                    <form action="{{ url_for('views.post_expense') }}" method="POST" target="_self">
-
-                        <div class="mb-3">
-                            <label for="budget" class="form-label">Budget(€)</label>
-                            <input type="number" class="form-control" id="budget" name="amount" placeholder="Enter your budget" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="expense_description" rows="4" placeholder="Describe your expense..." required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="date" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="date" name="expense_date" required>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-success">Post Expense</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    <h2 class="text-center">Add New Expense</h2>
+    <form id="expense-form" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="trip_id" class="form-label">Trip ID</label>
+            <input type="text" class="form-control" id="trip_id" name="trip_id" required>
+            <div class="invalid-feedback">Please enter the trip ID.</div>
         </div>
-    </div>
+        <div class="mb-3">
+            <label for="expense_date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="expense_date" name="expense_date" required>
+            <div class="invalid-feedback">Please select a date.</div>
+        </div>
+        <div class="mb-3">
+            <label for="expense_description" class="form-label">Description</label>
+            <textarea class="form-control" id="expense_description" name="expense_description" rows="3" required></textarea>
+            <div class="invalid-feedback">Please provide a description.</div>
+        </div>
+        <div class="mb-3">
+            <label for="amount" class="form-label">Amount</label>
+            <input type="number" class="form-control" id="amount" name="amount" required>
+            <div class="invalid-feedback">Please enter an amount.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Expense</button>
+    </form>
+    <div id="alert-container" class="mt-3"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script>
+    document.getElementById('expense-form').addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent default form submission
 
-{% with messages = get_flashed_messages()%}
+        const form = event.target;
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        // Collect form data
+        const expenseData = {
+            trip_id: document.getElementById('trip_id').value.trim(),
+            expense_date: document.getElementById('expense_date').value.trim(),
+            expense_description: document.getElementById('expense_description').value.trim(),
+            amount: parseFloat(document.getElementById('amount').value.trim())
+        };
+
+        // Submit form data to backend
+        try {
+            const response = await fetch('/trips/add_expense', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(expenseData)
+            });
+
+            const result = await response.json();
+            const alertContainer = document.getElementById('alert-container');
+
+            if (response.ok) {
+                // Display success message
+                alertContainer.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        ${result.message || 'Expense added successfully!'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+                form.reset();
+                form.classList.remove('was-validated');
+            } else {
+                // Display error message
+                alertContainer.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        Error: ${result.error || 'Failed to add expense.'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            }
+        } catch (error) {
+            console.error('Failed to submit expense:', error);
+            document.getElementById('alert-container').innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    Error: Unable to connect to the server.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+        }
+    });
+</script>
+
+{% with messages = get_flashed_messages() %}
     {% for message in messages %}
-    <h3>{{ message }}</h3>
+    <div class="alert alert-info mt-3">{{ message }}</div>
     {% endfor %}
 {% endwith %}
 
