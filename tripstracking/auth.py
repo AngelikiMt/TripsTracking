@@ -69,17 +69,16 @@ def register_user():
                 error = "Registration failed"
 
         if json_response:
-            return jsonify({"error": error}), 409
+            return jsonify({"error": error}), 400
         flash(error)
         return redirect(url_for('users.register_user'))
-
     return render_template('register_user.html', form=form)
 
 @users.route('/delete_user', methods = ['GET', 'POST'])
 @crud_trips
 def delete_user():
     if 'user_id' not in session:
-        flash("You need to be logged in to delete your account.")
+        flash("You need to be logged in for deleting your account.")
         return redirect(url_for('users.login'))
 
     user_id = session['user_id'] 
@@ -106,15 +105,15 @@ def delete_user():
         
         except Exception as e:
             error = f"Failed to delete user: {str(e)}"  
-        if json_response:
-            return jsonify({"error": error}), 404
-        flash(error)
-        return render_template('delete_user.html', user_id=user_id, user=user)
+            if json_response:
+                return jsonify({"error": error}), 404
+            flash(error)
+            return render_template('delete_user.html', user_id=user_id, user=user)
     return render_template('delete_user.html', user_id=user_id, user=user)
 
 @users.route('/login', methods = ['GET', 'POST'])
 def login_user():
-    form = forms.RegisterForm(request.form)
+    form = forms.LoginForm(request.form)
     if request.method == 'POST':
         json_response = "application/json" in request.headers.get("accept", "")
 

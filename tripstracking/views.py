@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from .db import open_db
 import os
 import functools
+from .static import forms
 
 views = Blueprint("views", __name__, template_folder='templates')
 
@@ -40,6 +41,11 @@ def user_info():
         g.user = db.execute(
             'SELECT * FROM user WHERE user_id = ?', (user_id,)
         ).fetchone()
+
+@views.before_request
+def method_override():
+    if '_method' in request.form:
+        request.environ['REQUEST_METHOD'] = request.form['_method']
 
 @views.route('/trips/', methods=['GET'])
 @crud_trips
@@ -106,10 +112,15 @@ def get_trip(trip_id):
 @views.route('/add_trip', methods=['GET', 'POST'])
 @crud_trips
 def post_trip():
+    form = forms.AddTripForm(request.form)
     if request.method == 'POST':
         db = open_db()
         json_response = "application/json" in request.headers.get("accept", "")
-        data = request.get_json()
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
+
         error = None
 
         if not data:
@@ -138,6 +149,7 @@ def post_trip():
                 trip_id = trip.lastrowid
 
                 trip_details = {
+                                "trip_id": trip_id,
                                 "destination": destination,
                                 "date": date,
                                 "description": description,
@@ -145,32 +157,36 @@ def post_trip():
                 if json_response:
                     response = {"message": "Trip created successfully!",
                                 "trip": trip_details}
-                    return jsonify(response), 201
-                else:
-                    return redirect(url_for('views.get_trip'), trip=trip_details, trip_id=trip_id)
+                    return jsonify(response), 201  
+                return redirect(url_for('views.get_trip'), trip=trip_details, trip_id=trip_id)
             except Exception as e:
                 if json_response:
                     return jsonify({"error": f"Failed to create trip: {str(e)}"}), 500
                 return redirect(url_for("views.post_trip"))
     return render_template('trips/post_trip.html')
 
-@views.route('/edit_trip/<int:trip_id>', methods=['GET', 'PUT'])
+@views.route('/edit_trip/<int:trip_id>', methods=['GET', 'POST'])
 @crud_trips
 def put_trip(trip_id):
+    form = forms.PutTripForm(request.form)
+    db = open_db()
+    json_response = "application/json" in request.headers.get("accept", "")
+
+    trip = db.execute(
+        "SELECT trip_id, destination, description, date, budget FROM trip WHERE trip_id = ?", (trip_id,)
+    ).fetchone()
+
+    if not trip:
+        if json_response:
+            return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
+        flash("No trip found")
+        return redirect(url_for('views.get_all_trips'))
+
     if request.method == 'POST':
-        db = open_db()
-        json_response = "application/json" in request.headers.get("accept", "")
-        data = request.get_json()
-
-        trip = db.execute(
-            "SELECT trip_id, destination, description, date, budget, created FROM trip where trip_id = ?", (trip_id,)
-        ).fetchone()
-
-        if not trip:
-            if json_response:
-                return jsonify({"error": f"Trip with trip id {trip_id} not found"}), 404
-            flash("No trip found")
-            return redirect(url_for('views.get_all_trips'))
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
 
         destination = data.get('destination')
         date = data.get('date')
@@ -178,32 +194,40 @@ def put_trip(trip_id):
         budget = data.get('budget')
 
         if not destination or not description:
-            error = "The destination and description of the trip are required"
+            error = "Both destination and description are required."
             if json_response:
                 return jsonify({"error": error}), 400
             flash(error)
-            return redirect(url_for("views.put_trip"))
-        
-        db.execute(
-            'UPDATE trip SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
-        )
-        db.commit()
+            return redirect(url_for("views.put_trip", trip_id=trip_id))
+    
+        try: 
+            db.execute(
+                'UPDATE trip SET destination = ?, date = ?, description = ?, budget = ? WHERE trip_id = ?', (destination, date, description, budget, trip_id,)
+            )
+            db.commit()
 
-        trip_details = {"destination": destination,
-                        "description": description,
-                        "date": date,
-                        "budget": budget
-                    }
-        
-        message = "Trip updated successfully!"
-        if json_response:
-            response = {"message": message,
-                        "trip": trip_details}
-            return jsonify(response), 200
-        else:
+            updated_trip = {
+                "trip_id": trip_id,
+                "destination": destination,
+                "description": description,
+                "date": date,
+                "budget": budget
+            }
+            
+            message = "Trip updated successfully!"
+            if json_response:
+                response = {"message": message,
+                            "trip": updated_trip}
+                return jsonify(response), 200
             flash(message)
-            return render_template('trips/trip.html', trip=trip_details, trip_id=trip_id)
-    return render_template('trips/post_trip.html')
+            return render_template('trips/trip.html', trip=updated_trip, trip_id=trip_id)
+        except Exception as e:
+            error = f"Failed to update trip: {str(e)}"
+            if json_response:
+                return jsonify({"error": error}), 500
+            flash(error)
+            return render_template("trips/trip.html", trip_id=trip_id)
+    return render_template('trips/put_trip.html', trip=trip, trip_id=trip_id, form=form)
 
 @views.route('/delete_trip/<int:trip_id>', methods=['GET', 'POST'])
 @crud_trips
@@ -235,6 +259,216 @@ def delete_trip(trip_id):
             flash(error)
             return render_template('trips/delete_trip.html', error=error)
     return render_template('trips/delete_trip.html', trip_id=trip_id, trip=trip)
+
+@views.route('/trips/expenses/', methods=['GET'])
+@crud_trips
+def get_all_expenses():
+    db = open_db()
+    json_response = "application/json" in request.headers.get("accept", "")
+
+    expenses = db.execute(
+        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense ORDER BY amount DESC'
+    ).fetchall()
+
+    if not expenses:
+        error = "No expenses found"
+        if json_response:
+            return jsonify({"error": error}), 404
+        flash(error)
+        return redirect(url_for("views.post_expense"))
+    
+    all_expenses = []
+
+    for expense in expenses:
+        all_expenses.append({
+            "expense_id": escape(expense["expense_id"]),
+            "expense_description": escape(expense["expense_description"]),
+            "expense_date": escape(expense["expense_date"]),
+            "amount": escape(expense["amount"]),
+            "created": escape(expense["created"]),
+        })
+    expense_id = expense["expense_id"]
+    if json_response:
+        respond = {"expenses": all_expenses}
+        return jsonify(respond), 200
+    return render_template('expenses/expenses.html', expenses=all_expenses, expense_id=expense_id)
+    
+@views.route('/trips/expenses/<int:expense_id>', methods=['GET'])
+@crud_trips
+def get_expense(expense_id):
+    db = open_db()
+    json_response = "application/json" in request.headers.get("accept", "")
+
+    expense = db.execute(
+        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense WHERE expense_id = ?', (expense_id,)
+    ).fetchone()
+
+    if expense is None:
+        if json_response:
+            return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
+        flash("No expense found")
+        return redirect(url_for("views.get_all_expenses"))
+
+    expense_details = {
+        "expense_id": escape(expense["expense_id"]),
+        "expense_description": escape(expense["expense_description"]),
+        "expense_date": escape(expense["expense_date"]),
+        "amount": escape(expense["amount"]),
+        "created": escape(expense["created"])
+    }
+    if json_response:
+        response = {"expense": expense_details}
+        return jsonify(response), 200
+    return render_template('expenses/expense.html', expense=expense_details, expense_id=expense_id)
+
+@views.route('/trips/add_expense', methods=['GET', 'POST'])
+@crud_trips
+def post_expense():
+    if request.method == 'POST':
+        db = open_db()
+        json_response = "application/json" in request.headers.get("accept", "")
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
+        error = None
+
+        if not data:
+            error = "No data given"
+            if json_response:
+                return jsonify({"error": error}), 400
+            flash(error)
+            return redirect(url_for('views.post_expense'))
+        
+        expense_description = data.get('expense_description')
+        expense_date = data.get('expense_date')
+        amount = data.get('amount')
+        
+        if not amount:
+            error = "Amount is required"
+            if json_response: 
+                return jsonify({"error": error}), 400
+            flash(error)
+            return redirect(url_for("views.post_expense"))
+        if error is None:     
+            try:
+                expense = db.execute(
+                    "INSERT INTO expense (expense_description, expense_date, amount) VALUES (?, ?, ?)", (expense_description, expense_date, amount)
+                )
+                db.commit()
+
+                expense_id = expense.lastrowid
+
+                expense_details = {"expense_description": expense_description,
+                                "expense_date": expense_date,
+                                "amount": amount,
+                                "expense_id": expense_id}
+                message = "Expense created successfully!"
+                if json_response:
+                    response = {"message": message,
+                                    "expense": expense_details}
+                    return jsonify(response), 201
+                flash(message)
+                return redirect(url_for('views.get_expense'), expense=expense_details, expense_id=expense_id)
+            except Exception as e:
+                if json_response:
+                    return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500
+                flash(f"{str(e)}")
+                return render_template('expenses/post_expense.html')
+    return render_template('expenses/post_expense.html')
+
+@views.route('/trips/edit_expense/<int:expense_id>', methods=['GET', 'POST'])
+@crud_trips
+def put_expense(expense_id):
+    db = open_db()
+    json_response = "application/json" in request.headers.get("accept", "")
+    
+    expense = db.execute(
+        "SELECT expense_id, trip_id, expense_description, expense_date, amount, created FROM expense WHERE expense_id = ?", (expense_id,)
+    ).fetchone()
+
+    if not expense:
+        if json_response:
+            return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
+        flash("No expense found")
+        return redirect(url_for('views.put_expense'))
+    
+    if request.method == 'POST':
+        if json_response:
+            data = request.get_json()
+        else:
+            data = request.form
+
+        expense_description = data.get('expense_description')
+        trip_id = data.get('trip_id')
+        expense_date = data.get('expense_date')
+        amount = data.get('amount')
+
+        if not amount:
+            error = "Amount is required"
+            if json_response:
+                return jsonify({"error": error}), 400
+            flash(error)
+            return redirect(url_for("views.put_expense", expense_id=expense_id))
+        try:
+            db.execute(
+                "UPDATE expense SET trip_id = ?, expense_description = ?, expense_date = ?, amount = ? WHERE expense_id = ?", (trip_id, expense_description, expense_date, amount, expense_id)
+            )
+            db.commit()
+            
+            updated_expense = {
+                            "expense_id": expense_id,
+                            "trip_id": trip_id,
+                            "expense_description": expense_description,
+                            "expense_date": expense_date,
+                            "amount": amount
+                        }
+            
+            message = "Expense updated successfully!"
+            if json_response:
+                response = {"message": message,
+                        "expense": updated_expense}
+                return jsonify(response), 200
+            flash(message)
+            return render_template('expenses/expense.html', expense=updated_expense, expense_id=expense_id)
+        except Exception as e:
+            error = f"Failed to update expense: {str(e)}"
+            if json_response:
+                return jsonify({"error": error}), 500
+            flash(error)
+            return render_template("expenses/expense.html", expense_id=expense_id)
+    return render_template('expenses/put_expense.html', expense=expense, expense_id=expense_id)
+
+@views.route('/trips/delete_expense/<int:expense_id>', methods=['GET', 'POST'])
+@crud_trips
+def delete_expense(expense_id):
+    json_response = "application/json" in request.headers.get("accept", "")
+    db = open_db()
+
+    expense = db.execute(
+        "SELECT * FROM expense WHERE expense_id = ?", (expense_id,)
+    ).fetchone()
+
+    if request.method == 'POST':
+        try:
+            db.execute(
+                "DELETE FROM expense WHERE expense_id = ?", (expense_id,)
+            )
+            db.commit()
+
+            message = "Expense deleted successfully!"
+            if json_response:
+                return jsonify({"message": message}), 200
+            flash(message)
+            return redirect(url_for("views.get_all_expenses"))
+        
+        except Exception as e:
+            error = f"Failed to delete expense: {str(e)}"
+            if json_response:
+                return jsonify({"error": error}), 500
+            flash(error)
+            return render_template('expenses/delete_expense.html', error=error)
+    return render_template('expenses/delete_expense.html', expense_id=expense_id, expense=expense)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -341,195 +575,3 @@ def delete_photo(photo_id):
     flash(message)
     return redirect(url_for('views.get_all_photos'))
 
-@views.route('/trips/expenses/', methods=['GET'])
-@crud_trips
-def get_all_expenses():
-    db = open_db()
-    json_response = "application/json" in request.headers.get("accept", "")
-
-    expenses = db.execute(
-        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense ORDER BY amount DESC'
-    ).fetchall()
-
-    if not expenses:
-        error = "No expenses found"
-        if json_response:
-            return jsonify({"error": error}), 404
-        flash(error)
-        return redirect(url_for("views.post_expense"))
-    
-    all_expenses = []
-
-    for expense in expenses:
-        all_expenses.append({
-            "expense_id": escape(expense["expense_id"]),
-            "expense_description": escape(expense["expense_description"]),
-            "expense_date": escape(expense["expense_date"]),
-            "amount": escape(expense["amount"]),
-            "created": escape(expense["created"]),
-        })
-    expense_id = expense["expense_id"]
-    if json_response:
-        respond = {"expenses": all_expenses}
-        return jsonify(respond), 200
-    return render_template('expenses/expenses.html', expenses=all_expenses, expense_id=expense_id)
-    
-@views.route('/trips/expenses/<int:expense_id>', methods=['GET'])
-@crud_trips
-def get_expense(expense_id):
-    db = open_db()
-    json_response = "application/json" in request.headers.get("accept", "")
-
-    expense = db.execute(
-        'SELECT expense_id, expense_description, expense_date, amount, created FROM expense WHERE expense_id = ?', (expense_id,)
-    ).fetchone()
-
-    if expense is None:
-        if json_response:
-            return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
-        flash("No expense found")
-        return redirect(url_for("views.get_all_expenses"))
-
-    expense_details = {
-        "expense_id": escape(expense["expense_id"]),
-        "expense_description": escape(expense["expense_description"]),
-        "expense_date": escape(expense["expense_date"]),
-        "amount": escape(expense["amount"]),
-        "created": escape(expense["created"])
-    }
-    if json_response:
-        response = {"expense": expense_details}
-        return jsonify(response), 200
-    return render_template('expenses/expense.html', expense=expense_details, expense_id=expense_id)
-
-@views.route('/trips/add_expense', methods=['GET', 'POST'])
-@crud_trips
-def post_expense():
-    if request.method == 'POST':
-        db = open_db()
-        json_response = "application/json" in request.headers.get("accept", "")
-        data = request.get_json()
-
-        if not data:
-            error = "No data given"
-            if json_response:
-                return jsonify({"error": error}), 400
-            flash(error)
-            return redirect(url_for('views.post_expense'))
-        
-        expense_description = data.get('expense_description')
-        expense_date = data.get('expense_date')
-        amount = data.get('amount')
-        
-        if not amount:
-            error = "Amount is required"
-            if json_response: 
-                return jsonify({"error": error}), 400
-            flash(error)
-            return redirect(url_for("views.post_expense"))
-            
-        try:
-            expense = db.execute(
-                "INSERT INTO expense (expense_description, expense_date, amount) VALUES (?, ?, ?)", (expense_description, expense_date, amount)
-            )
-            db.commit()
-
-            expense_id = expense.lastrowid
-
-            expense_details = {"expense_description": expense_description,
-                            "expense_date": expense_date,
-                            "amount": amount,
-                            "expense_id": expense_id}
-            message = "Expense created successfully!"
-            if json_response:
-                response = {"message": message,
-                                "expense": expense_details}
-                return jsonify(response), 201
-            flash(message)
-            return redirect(url_for('views.get_expense'), expense=expense_details)
-        except Exception as e:
-            if json_response:
-                return jsonify({"error": f"Failed to create expense: {str(e)}"}), 500
-            flash(f"{str(e)}")
-            return render_template('expenses/post_expense.html')
-    return render_template('expenses/post_expense.html')
-
-@views.route('/trips/edit_expense/<int:expense_id>', methods=['GET', 'PUT'])
-@crud_trips
-def put_expense(expense_id):
-    if request.method == 'PUT':
-        db = open_db()
-        json_response = "application/json" in request.headers.get("accept", "")
-        data = request.get_json()
-
-        expense = db.execute(
-            "SELECT expense_id, expense_description, expense_date, amount, created FROM expense WHERE expense_id = ?", (expense_id,)
-        ).fetchone()
-
-        if not expense:
-            if json_response:
-                return jsonify({"error": f"Expense with expense id {expense_id} not found"}), 404
-            flash("No expense found")
-            return redirect(url_for('views.put_expense'))
-        
-        expense_description = data.get('expense_description')
-        expense_date = data.get('expense_date')
-        amount = data.get('amount')
-
-        if not amount:
-            error = "Amount is required"
-            if json_response:
-                return jsonify({"error": error}), 400
-            flash(error)
-            return redirect(url_for("views.put_expense"))
-    
-        db.execute(
-            "UPDATE expense SET expense_description = ?, expense_date = ?, amount = ? WHERE expense_id = ?", (expense_description, expense_date, amount, expense_id)
-        )
-
-        db.commit()
-        
-        expense_details = {
-                        "expense_description": expense_description,
-                        "expense_date": expense_date,
-                        "amount": amount
-                    }
-        message = "Expense updated successfully!"
-        if json_response:
-            response = {"message": message,
-                    "expense": expense_details}
-            return jsonify(response), 201
-        flash(message)
-        return render_template('expenses/expense.html', expense=expense_details, expense_id=expense_id)
-    return render_template('expenses/post_expense.html')
-
-@views.route('/trips/delete_expense/<int:expense_id>', methods=['GET', 'POST'])
-@crud_trips
-def delete_expense(expense_id):
-    json_response = "application/json" in request.headers.get("accept", "")
-    db = open_db()
-
-    expense = db.execute(
-        "SELECT * FROM expense WHERE expense_id = ?", (expense_id,)
-    ).fetchone()
-
-    if request.method == 'POST':
-        try:
-            db.execute(
-                "DELETE FROM expense WHERE expense_id = ?", (expense_id,)
-            )
-            db.commit()
-
-            message = "Expense deleted successfully!"
-            if json_response:
-                return jsonify({"message": message}), 200
-            flash(message)
-            return redirect(url_for("views.get_all_expenses"))
-        
-        except Exception as e:
-            error = f"Failed to delete expense: {str(e)}"
-            if json_response:
-                return jsonify({"error": error}), 500
-            flash(error)
-            return render_template('expenses/delete_expense.html', error=error)
-    return render_template('expenses/delete_expense.html', expense_id=expense_id, expense=expense)

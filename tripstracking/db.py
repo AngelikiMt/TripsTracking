@@ -14,7 +14,7 @@ def open_db():
             )
             g.db.row_factory = sqlite3.Row
         except Exception as e:
-            return jsonify({"error": f"{str(e)}"}), 404
+            return jsonify({"error": f"Error connecting the file with the database: {str(e)}"}), 404
     return g.db
 
 def close_db(e=None):
@@ -33,7 +33,7 @@ def init_db():
 
 @click.command('init-db')
 def init_db_command():
-    '''Creates a user-friendly command to initialize a new database, or erase the existing data to create a new table. Run the command: 
+    '''Creates a user-friendly command to initialize a new database, or erase the existing data to create a new one. Run the command: 
     
     flask init-db 
     
