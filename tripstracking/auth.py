@@ -89,6 +89,13 @@ def delete_user():
         "SELECT * FROM user WHERE user_id = ?", (user_id,)
     ).fetchone()
 
+    if not user:
+        error = "User not found or already deleted."
+        if json_response:
+            return jsonify({"error": error}), 404
+        flash(error)
+        return redirect(url_for('users.login_user'))
+
     if request.method == 'POST':
         try:
             db.execute(
@@ -108,7 +115,6 @@ def delete_user():
             if json_response:
                 return jsonify({"error": error}), 404
             flash(error)
-            return render_template('delete_user.html', user_id=user_id, user=user)
     return render_template('delete_user.html', user_id=user_id, user=user)
 
 @users.route('/login', methods = ['GET', 'POST'])
@@ -128,15 +134,23 @@ def login_user():
         username = data.get('username')
         password = data.get('password')
 
-        if (not username) or (not password):
+        if not username or not password:
             error = "Username and password are required"
+            if json_response:
+                return jsonify({"error":error}), 400
+            flash(error)
+            return redirect(url_for('users.login_user'))
 
         user = db.execute(
             'SELECT * FROM user WHERE username = ?', (username,)
         ).fetchone()
 
         if user is None:
-            error = 'Invalid username'
+            error = "Invalid username"
+            if json_response:
+                return jsonify({"error": error}), 401
+            flash(error)
+            return redirect(url_for('users.login_user'))
 
         if not check_password_hash(user['password'], password):
             error = 'Invalid password'
@@ -161,7 +175,6 @@ def login_user():
             return jsonify({"error": error}), 401
         flash(error)
         return redirect(url_for('users.login_user', error=error))
-
     return render_template('login.html', form=form)
 
 @users.route('/logout', methods = ['GET','POST'])

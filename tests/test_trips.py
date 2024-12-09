@@ -1,2 +1,0 @@
-import pytest
-from tripstracking import create_app

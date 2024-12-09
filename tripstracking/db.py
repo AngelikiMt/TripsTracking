@@ -14,7 +14,8 @@ def open_db():
             )
             g.db.row_factory = sqlite3.Row
         except Exception as e:
-            return jsonify({"error": f"Error connecting the file with the database: {str(e)}"}), 404
+            current_app.logger.error(f"Database connection failed: {str(e)}")
+            raise RuntimeError("Failed to connect to the database")
     return g.db
 
 def close_db(e=None):
