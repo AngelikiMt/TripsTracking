@@ -12,14 +12,8 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('views.put_expense', expense_id=expense_id) }}" id="edit-expense-form">
+    <form method="POST" action="{{ url_for('views.put_expense', expense_id=expense_id, trip_id=trip_id) }}" id="edit-expense-form">
         <input type="hidden" name="_method" value="PUT">
-
-        <div class="mb-3">
-            <label for="trip_id" class="form-label">Trip Id</label>
-            <input type="text" class="form-control" id="trip_id" name="trip_id" value="{{ expense.trip_id }}" required>
-            <div class="invalid-feedback">Please enter the trip ID.</div>
-        </div>
         <div class="mb-3">
             <label for="expense_date" class="form-label">Date</label>
             <input type="date" class="form-control" id="expense_date" name="expense_date" value="{{ expense.expense_date }}">
@@ -37,7 +31,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="{{ url_for('views.get_all_expenses') }}" class="btn btn-secondary">Cancel</a>
+        <a href="{{ url_for('views.get_all_expenses', trip_id=trip_id) }}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
 

@@ -45,10 +45,15 @@ def test_delete_user(client, auth):
     response = auth.login()
     assert response.status_code == 302
 
-    with client:
-        response = auth.delete()
-        assert response.status_code == 200
-        response = client.post('/users/delete_user')
-        assert response.status == 200
+    with client.session_transaction() as session:
+        assert 'user_id' in session
+        assert session['user_id'] == 1  # Ensure the session user_id matches
+
+    # Attempt to delete the user
+    response = auth.delete()
+    assert response.status_code == 200
+
+    # Confirm user session is cleared
+    with client.session_transaction() as session:
         assert 'user_id' not in session
         assert b"User deleted successfully!" in response.data

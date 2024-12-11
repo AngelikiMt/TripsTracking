@@ -13,6 +13,7 @@
                         <p>Are you sure you want to delete the user <strong>{{ user.username }}</strong>?</p>
 
                         <form method="POST" action="{{ url_for('users.delete_user', user_id=user_id) }}"><a href="{{ url_for('users.register_user') }}" class="btn btn-danger">Delete User</a>
+                            <input type="hidden" name="_method" value="DELETE">
                             <a href="/" class="btn btn-secondary">Cancel</a>
                         </form>
                 </div>

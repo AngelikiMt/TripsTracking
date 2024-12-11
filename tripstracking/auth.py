@@ -81,7 +81,7 @@ def delete_user():
         flash("You need to be logged in for deleting your account.")
         return redirect(url_for('users.login'))
 
-    user_id = session['user_id'] 
+    user_id = session.get('user_id') 
     json_response = "application/json" in request.headers.get("accept", "")
     db = open_db()
 

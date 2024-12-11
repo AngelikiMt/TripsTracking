@@ -30,7 +30,7 @@ CREATE TABLE expense (
     expense_description TEXT,
     expense_date TEXT,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (trip_id) REFERENCES trips (trip_id) ON DELETE CASCADE
+    FOREIGN KEY (trip_id) REFERENCES trip (trip_id) ON DELETE CASCADE
 );
 
 CREATE TABLE photo (
@@ -38,5 +38,5 @@ CREATE TABLE photo (
     trip_id INTEGER,
     file_path TEXT REQUIRED NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (trip_id) REFERENCES trips (trip_id) ON DELETE CASCADE
+    FOREIGN KEY (trip_id) REFERENCES trip (trip_id) ON DELETE CASCADE
 );

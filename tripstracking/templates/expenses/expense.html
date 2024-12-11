@@ -20,18 +20,19 @@
         </div>
     </div>
     <button class="btn btn-primary mt-3" onclick="goBack()">Back to Expenses</button>
-    <a href="{{ url_for('views.delete_expense', expense_id=expense_id) }}" method="post">
+    <a href="{{ url_for('views.delete_expense', expense_id=expense_id, trip_id=trip_id) }}" method="POST">
         <i class="material-icons" style="font-size:24px;">delete</i>
     </a>
-    <a href="{{ url_for('views.put_expense', expense_id=expense_id) }}">
+    <a href="{{ url_for('views.put_expense', expense_id=expense_id, trip_id=trip_id) }}">
         <i class="fa fa-edit" style="font-size:24px;"></i>
     </a>
+    <div class="row" id="expenses-container" data-trip-id="{{ expense.trip_id }}"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    const tripId = document.getElementById('expenses-container').dataset.tripId; || '{{ expense.trip_id }}'
     function goBack() {
-        window.location.href = '/trips/expenses';
+        window.location.href = `/trips/expenses/${tripId}`;
     }
 </script>
 

@@ -1,2 +1,2 @@
-INSERT INTO user (username, password, fullname, email) VALUES (?, ?, ?, ?), ("Tester", "securitypassword", "Tester User", "testerUser@mailexample.com")
-INSERT INTO trip (destination, date, description, budget) VALUES (?, ?, ?, ?), ("Paris", "01.01.2024", "Romantic Dinner!", 3000)
+INSERT INTO user (username, password, fullname, email) VALUES ("Tester", "securitypassword", "Tester User", "testerUser@mailexample.com");
+INSERT INTO trip (destination, date, description, budget) VALUES ("Paris", "2024-01-01", "Romantic Dinner!", 3000);
