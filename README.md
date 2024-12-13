@@ -37,13 +37,13 @@ To install Project TripsTracking, follow these steps:
 **Views.py **
 <ins>Trips</ins>
 1. Home page, methods='GET': "/"
-    - ![Homepage with a 'Please log in to access and manage your trips' message](/README_photos/homepage.png)
+    ![Homepage with a 'Please log in to access and manage your trips' message](/README_photos/homepage.png)
 
 2. Get all trips, methods='GET': "/trips/"
-    - ![Get all trips page.](/README_photos/get_all_trips.png)
+    ![Get all trips page.](/README_photos/get_all_trips.png)
 
 3. Get a trip, methods='GET': "/trip/<int:trip_id>"
-    - ![Get a trip page.](/README_photos/get_trip.png)
+    ![Get a trip page.](/README_photos/get_trip.png)
 
 4. Post a trip, methods='GET, POST': "/add_trip" 
     - The post-a-trip page appears when: 
@@ -55,7 +55,7 @@ To install Project TripsTracking, follow these steps:
     ![Trip created successfully message redirected to '/add_trip'.](/README_photos/trip_created_successfully_message_redirect_add_trip.png)
 
 5. Put a trip, methods='GET, POST': "/edit_trip/<int:trip_id>"
-    - ![Edit trip page](/README_photos/put_trip.png)
+    ![Edit trip page](/README_photos/put_trip.png)
     - After updating a trip, the app redirects the user to the "/trips/<int:trip_id>" URL with a 'trip updated successfully!' flashed message.
     ![Trip updated successfully message redirect to ](/README_photos/trip_updated_successfully_message_redirect_get_trip.png)
 
@@ -65,10 +65,10 @@ To install Project TripsTracking, follow these steps:
 
 <ins>Expenses</ins>
 1. Get all expenses, methods='GET': "/trips/expenses/<int:trip_id>"
-    - ![Get all expenses page.](/README_photos/get_all_expenses.png)
+    ![Get all expenses page.](/README_photos/get_all_expenses.png)
 
 2. Get an expense, methods='GET': "/trips/expenses/<int:trip_id>/<int:expense_id>"
-    - ![Get-an-expense page.](/README_photos/get_expense.png)
+    ![Get-an-expense page.](/README_photos/get_expense.png)
 
 3. Post an expense, methods='GET, POST': "/trips/add_expense/<int:trip_id>/"
     - The post-an-expense page appears when: 
@@ -89,7 +89,7 @@ To install Project TripsTracking, follow these steps:
 
 **Auth.py""
 1. Register a user, methods='GET, POST': "/register"
-    - ![Register a user form](/README_photos/registration_form.png)
+    ![Register a user form](/README_photos/registration_form.png)
 
 2. Login a user, methods='GET, POST': "/login"
     - When an invalid username or password an error is flashed and the user redirects to the login page. 
@@ -103,7 +103,7 @@ To install Project TripsTracking, follow these steps:
     ![Delete a user](/README_photos/delete_user.png)
 
 4. Logout a user, methods='GET, POST': "/logout"
-    - ![logout page](/README_photos/logout.png)
+    ![logout page](/README_photos/logout.png)
     - When the user logs out of the app, it redirects to the login page with a 'logout successfully' message. 
     ![Login page and 'logout successgully' message](/README_photos/logout_message_redirect_login.png)
 
