@@ -37,75 +37,75 @@ To install Project TripsTracking, follow these steps:
 **Views.py **
 <ins>Trips</ins>
 1. Home page, methods='GET': "/"
-    - ![Homepage with a 'Please log in to access and manage your trips' message](/READMe%20Photos/homepage.png)
+    - ![Homepage with a 'Please log in to access and manage your trips' message](/README_photos/homepage.png)
 
 2. Get all trips, methods='GET': "/trips/"
-    - ![Get all trips page.](/READMe%20Photos/get_all_trips.png)
+    - ![Get all trips page.](/README_photos/get_all_trips.png)
 
 3. Get a trip, methods='GET': "/trip/<int:trip_id>"
-    - ![Get a trip page.](/READMe%20Photos/get_trip.png)
+    - ![Get a trip page.](/README_photos/get_trip.png)
 
 4. Post a trip, methods='GET, POST': "/add_trip" 
     - The post-a-trip page appears when: 
         - A user tries to retrieve all trips but no trips are posted yet. Then a 'No trips found' message flashes and redirects the user to the '/add_trip/ URL. 
-        ![Post-a-trip page](/READMe%20Photos/get_trips_no_trip_found_redirect_add_trip.png) 
+        ![Post-a-trip page](/README_photos/get_trips_no_trip_found_redirect_add_trip.png) 
         - A user wants to add a trip by pressing the 'add a trip' button, which redirects to the same URL. 
 
     - After creating a trip, the app flashes a successful creation message and redirects the user to the '/add_trip' URL. 
-    ![Trip created successfully message redirected to '/add_trip'.](/READMe%20Photos/trip_created_successfully_message_redirect_add_trip.png)
+    ![Trip created successfully message redirected to '/add_trip'.](/README_photos/trip_created_successfully_message_redirect_add_trip.png)
 
 5. Put a trip, methods='GET, POST': "/edit_trip/<int:trip_id>"
-    - ![Edit trip page](/READMe%20Photos/put_trip.png)
+    - ![Edit trip page](/README_photos/put_trip.png)
     - After updating a trip, the app redirects the user to the "/trips/<int:trip_id>" URL with a 'trip updated successfully!' flashed message.
-    ![Trip updated successfully message redirect to ](/READMe%20Photos/trip_updated_successfully_message_redirect_get_trip.png)
+    ![Trip updated successfully message redirect to ](/README_photos/trip_updated_successfully_message_redirect_get_trip.png)
 
 6. Delete a trip, methods='GET, POST': "/delete_trip/<int:trip_id>"
     - Both the 'Cancel' and the 'Delete Trip' buttons are redirecting the user to the '/trips/' URL to GET all trips. 
-    ![Delete a trip](/READMe%20Photos/delete_trip.png)
+    ![Delete a trip](/README_photos/delete_trip.png)
 
 <ins>Expenses</ins>
 1. Get all expenses, methods='GET': "/trips/expenses/<int:trip_id>"
-    - ![Get all expenses page.](/READMe%20Photos/get_all_expenses.png)
+    - ![Get all expenses page.](/README_photos/get_all_expenses.png)
 
 2. Get an expense, methods='GET': "/trips/expenses/<int:trip_id>/<int:expense_id>"
-    - ![Get-an-expense page.](/READMe%20Photos/get_expense.png)
+    - ![Get-an-expense page.](/README_photos/get_expense.png)
 
 3. Post an expense, methods='GET, POST': "/trips/add_expense/<int:trip_id>/"
     - The post-an-expense page appears when: 
         - A user tries to retrieve all expenses but no expenses are posted yet. Then a 'No expenses found' message flashes and redirects the user to the '/trips/add_expense/<int:trip_id>/' URL. 
-        ![Post-an-expense page](/READMe%20Photos/get_expenses_no%20expense_found_redirect_add_expense.png)
+        ![Post-an-expense page](/README_photos/get_expenses_no%20expense_found_redirect_add_expense.png)
         - A user wants to add an expense by pressing the 'add an expense' button, which redirects to the same URL. 
 
     - After creating an expense, the app flashes a successful creation message and redirects the user to the "/trips/add_expense/<int:trip_id>/" URL. 
-    ![Trip created successfully message redirected to the '/add_trip' URL.](/READMe%20Photos/expense_successfully_created_redirect_add_expense.png)
+    ![Trip created successfully message redirected to the '/add_trip' URL.](/README_photos/expense_successfully_created_redirect_add_expense.png)
 
 4. Put an expense, methods='GET, POST': "/trips/edit_expense/<int:trip_id>/<int:expense_id>/"
     - After updating an expense, the app redirects the user to the "/trips/expenses/<int:trip_id>/<int:expense_id>" URL with an 'expense updated successfully!' flashed message. 
-    ![Edit an expense](/READMe%20Photos/expense_updated_seccessfully_message_redirect_get_expense.png)
+    ![Edit an expense](/README_photos/expense_updated_seccessfully_message_redirect_get_expense.png)
 
 5. Delete an expense, methods='GET, POST': "/trips/delete_expense/<int:trip_id>/<int:expense_id>/"
     - Both the 'Cancel' and the 'Delete Expense' buttons are redirecting the user to the "/trips/expenses/<int:trip_id>" URL to GET all expenses.  
-    ![Delete an expense](/READMe%20Photos/delete_expense.png)
+    ![Delete an expense](/README_photos/delete_expense.png)
 
 **Auth.py""
 1. Register a user, methods='GET, POST': "/register"
-    - ![Register a user form](/READMe%20Photos/registration_form.png)
+    - ![Register a user form](/README_photos/registration_form.png)
 
 2. Login a user, methods='GET, POST': "/login"
     - When an invalid username or password an error is flashed and the user redirects to the login page. 
-    ![Login page with 'Invalid password' message](/READMe%20Photos/invalid_password_login.png)
+    ![Login page with 'Invalid password' message](/README_photos/invalid_password_login.png)
 
     - When a user logs in successfully, a success message flashes. The app redirects the user to the homepage and greets the user using the username. 
-    ![homepage with 'fullname, login successful' flashed message.](/READMe%20Photos/login_successfull_message_home_page.png)
+    ![homepage with 'fullname, login successful' flashed message.](/README_photos/login_successfull_message_home_page.png)
 
 3. Delete a user, methods='GET, POST': "/delete_user"
     - When a user is deleted, the app redirects to the registration form. 
-    ![Delete a user](/READMe%20Photos/delete_user.png)
+    ![Delete a user](/README_photos/delete_user.png)
 
 4. Logout a user, methods='GET, POST': "/logout"
-    - ![logout page](/READMe%20Photos/logout.png)
+    - ![logout page](/README_photos/logout.png)
     - When the user logs out of the app, it redirects to the login page with a 'logout successfully' message. 
-    ![Login page and 'logout successgully' message](/READMe%20Photos/logout_message_redirect_login.png)
+    ![Login page and 'logout successgully' message](/README_photos/logout_message_redirect_login.png)
 
 ## **Usage** :world_map:
 
