@@ -79,9 +79,8 @@ def register_user():
 def delete_user():
     if 'user_id' not in session:
         flash("You need to be logged in for deleting your account.")
-        return redirect(url_for('users.login'))
-
-    user_id = session.get('user_id') 
+        return redirect(url_for('users.login_users'))
+    user_id = session['user_id']
     json_response = "application/json" in request.headers.get("accept", "")
     db = open_db()
 
@@ -94,7 +93,7 @@ def delete_user():
         if json_response:
             return jsonify({"error": error}), 404
         flash(error)
-        return redirect(url_for('users.login_user'))
+        return redirect(url_for('users.regster_user'))
 
     if request.method == 'POST':
         try:
@@ -113,7 +112,7 @@ def delete_user():
         except Exception as e:
             error = f"Failed to delete user: {str(e)}"  
             if json_response:
-                return jsonify({"error": error}), 404
+                return jsonify({"error": error}), 500
             flash(error)
     return render_template('delete_user.html', user_id=user_id, user=user)
 
