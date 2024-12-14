@@ -81,7 +81,7 @@ To install Project TripsTracking, follow these steps:
 
 4. Put an expense, methods='GET, POST': "/trips/edit_expense/<int:trip_id>/<int:expense_id>/"
     - After updating an expense, the app redirects the user to the "/trips/expenses/<int:trip_id>/<int:expense_id>" URL with an 'expense updated successfully!' flashed message. 
-    ![Edit an expense](/README_photos/expense_updated_seccessfully_message_redirect_get_expense.png)
+    ![Edit an expense](/README_photos/expense_updated_seccessfully_message_redirect_get_all_expenses.png)
 
 5. Delete an expense, methods='GET, POST': "/trips/delete_expense/<int:trip_id>/<int:expense_id>/"
     - Both the 'Cancel' and the 'Delete Expense' buttons are redirecting the user to the "/trips/expenses/<int:trip_id>" URL to GET all expenses.  
