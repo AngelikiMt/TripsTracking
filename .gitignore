@@ -1,10 +1,11 @@
-.venv
-trips.db
 **/__pycache__
-.git
 *.egg-info/
 **/*.pyc
+
 .pytest_cache
 .cache
 __pycache__/
-**/__pycache__/*
+.venv
+.git
+
+trips.db
