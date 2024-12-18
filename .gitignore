@@ -1,7 +1,10 @@
 .venv
 trips.db
-__pycache__
+**/__pycache__
 .git
-tripstracking.egg-info
-tripstracking/__pycache__
+*.egg-info/
+**/*.pyc
 .pytest_cache
+.cache
+__pycache__/
+**/__pycache__/*
