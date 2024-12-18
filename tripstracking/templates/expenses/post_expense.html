@@ -22,6 +22,8 @@
             <div class="invalid-feedback">Please enter an amount.</div>
         </div>
         <button type="submit" class="btn btn-primary">Add Expense</button>
+        <a href="{{ url_for('views.get_all_expenses', trip_id=trip_id, destination=destination | urlencode) }}" class="btn btn-secondary">Go back to expenses</a>
+        <a href="{{ url_for('views.get_trip', trip_id=trip_id, destination=destination | urlencode) }}" class="btn btn-secondary">Go back to {{destination}} trip</a>
     </form>
     <div id="alert-container" class="mt-3"></div>
     <div class="row" id="expenses-container" data-trip-id="{{ trip_id }}"></div>
@@ -29,25 +31,17 @@
 
 <script>
     document.getElementById('expense-form').addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
 
-        const form = event.target;
-        if (!form.checkValidity()) {
-            form.classList.add('was-validated');
-            return;
-        }
-
-        // Collect form data
         const expenseData = {
             expense_date: document.getElementById('expense_date').value.trim(),
             expense_description: document.getElementById('expense_description').value.trim(),
             amount: parseFloat(document.getElementById('amount').value.trim())
         };
 
-        // Submit form data to backend
         try {
-            const tripId = document.getElementById('expenses-container').dataset.tripId;
-            const fetchUrl = `/trips/add_expense/${tripId}`;
+            const tripId = "{{ trip_id }}";
+            const fetchUrl = `/trips/add_expense/${tripId}/${encodeURIComponent("{{ destination }}")}`;
 
             const response = await fetch(fetchUrl, {
                 method: 'POST',
@@ -62,7 +56,6 @@
             const alertContainer = document.getElementById('alert-container');
 
             if (response.ok) {
-                // Display success message
                 alertContainer.innerHTML = `
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         ${result.message || 'Expense added successfully!'}
@@ -71,7 +64,6 @@
                 form.reset();
                 form.classList.remove('was-validated');
             } else {
-                // Display error message
                 alertContainer.innerHTML = `
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         Error: ${result.error || 'Failed to add expense.'}

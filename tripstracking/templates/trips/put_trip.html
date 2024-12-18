@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="container mt-5">
-    <h2 class="text-center">Edit Trip to {{ trip.destination }}</h2>
+    <h2 class="text-center">Edit Trip to {{ destination }}</h2>
 
     {% if error %}
     <div class="alert alert-danger">
@@ -12,7 +12,7 @@
     </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('views.put_trip', trip_id=trip_id, user_id=user_id) }}" id="edit-trip-form">
+    <form method="POST" action="{{ url_for('views.put_trip', trip_id=trip_id, destination=destination) }}" id="edit-trip-form">
         <input type="hidden" name="_method" value="PUT">
 
         <div class="mb-3">

@@ -18,25 +18,18 @@
             <p class="card-text"><small class="text-muted">Created on: {{ trip.created }}</small></p>
         </div>
     </div>
-    <button class="btn btn-primary mt-3" onclick="goBack()">Back to Trips</button>
-    <a href="{{ url_for('views.delete_trip', trip_id=trip_id) }}" method="post">
+    <a href="{{ url_for('views.delete_trip', trip_id=trip_id, destination=destination | urlencode) }}" method="post">
         <i class="material-icons" style="font-size:24px;">delete</i>
     </a>
-    <a href="{{ url_for('views.put_trip', trip_id=trip_id) }}">
+    <a href="{{ url_for('views.put_trip', trip_id=trip_id, destination=destination) }}">
         <i class="fa fa-edit" style="font-size:24px;"></i>
     </a>
     <br>
-    <button class="btn btn-primary mt-3" onclick="expenses()">Check your expenses here!</button>
+    <a href="{{ url_for('views.get_all_expenses', trip_id=trip_id, destination=destination | urlencode) }}" class="btn btn-primary mt-3">
+        Check your expenses here!
+    </a>
+    <button class="btn btn-secondary mt-3" onclick="window.location.href='{{ url_for('views.get_all_trips') }}'">Back to Trips</button>
 </div>
-
-<script>
-    function expenses() {
-        window.location.href = '/trips/expenses/{{ trip_id }}';
-    }
-    function goBack() {
-        window.location.href = '/trips/';
-    }
-</script>
 
 {% with messages = get_flashed_messages() %}
     {% for message in messages %}

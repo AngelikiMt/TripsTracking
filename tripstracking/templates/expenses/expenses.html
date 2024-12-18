@@ -4,30 +4,35 @@
 {% block content %}
 
 <div class="container mt-5">
-    <h2 class="text-center">All Expenses to: {{ trip_destination }}</h2>
+    <h2 class="text-center">All Expenses to: {{ destination }}</h2>
         <div id="expense-alert" class="alert alert-warning d-none" role="alert">
             No expenses found.
         </div>
     <div class="row" id="expenses-container" data-trip-id="{{ trip_id }}"></div>
-    <a href="{{ url_for('views.post_expense', trip_id=trip_id) }}" class="btn btn-secondary">Add your expenses!</a>
+    <a href="{{ url_for('views.post_expense', trip_id=trip_id, destination=destination | urlencode) }}" class="btn btn-secondary">Add your expenses!</a>
+    <button class="btn btn-secondary" onclick="window.location.href='{{ url_for('views.get_all_trips', trip_id=trip_id, destination=destination | urlencode) }}'">Back to Trips</button>
+    <button class="btn btn-secondary" onclick="window.location.href='{{ url_for('views.get_trip', trip_id=trip_id, destination=destination | urlencode) }}'">Back to {{ destination }} trip</button>
 </div>
 
 <script>
     async function fetchExpenses() {
         try {
             const tripId = document.getElementById('expenses-container').dataset.tripId;
-            const fetchUrl = `/trips/expenses/${tripId}`;
+            const destination = "{{ destination }}";
+            const fetchUrl = `/trips/expenses/${tripId}/${encodeURIComponent(destination)}`;
             const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json'
                 }
             });
-
-            if (response.status === 404) {
-                const alert = document.getElementById('expense-alert');
-                alert.classList.remove('d-none');
-                return;
+            if (!response.ok) {
+                if (response.status === 404) {
+                    const alert = document.getElementById('expense-alert');
+                    alert.classList.remove('d-none');
+                    return;
+                }
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -37,28 +42,28 @@
             container.innerHTML = ""; // Clear container
 
             expenses.forEach(expense => {
-                // Create Bootstrap card for each expense
                 const expenseCard = `
                     <div class="col-md-4 mb-4">
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">Expense Id: ${expense.expense_id}</h5>
+                                <h5 class="card-title">Expense: ${expense.expense_id}</h5>
                                 <p class="card-text">
                                     <strong>Date:</strong> ${expense.expense_date}<br>
                                     <strong>Budget:</strong> €${expense.amount}<br>
                                     <strong>Description:</strong> ${expense.expense_description}
                                 </p>
                                 <small class="text-muted">Created: ${expense.created}</small>
-                                <a href="/trips/expenses/${tripId}/${expense.expense_id}" class="btn btn-primary">View Details</a>
+                                <a href="/trips/expenses/${tripId}/${expense.expense_id}/${encodeURIComponent(destination)}" class="btn btn-primary">View Details</a>
                             </div>
                         </div>
                     </div>`;
                 container.innerHTML += expenseCard;
             });
-            // Hide alert if expenses are found
             document.getElementById('expense-alert').classList.add('d-none');
         } catch (error) {
             console.error('Error fetching expenses:', error);
+            document.getElementById('expense-alert').textContent = 'Error loading expenses.';
+            document.getElementById('expense-alert').classList.remove('d-none');
         }
     }
 

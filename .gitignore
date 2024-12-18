@@ -3,3 +3,5 @@ trips.db
 __pycache__
 .git
 tripstracking.egg-info
+tripstracking/__pycache__
+.pytest_cache

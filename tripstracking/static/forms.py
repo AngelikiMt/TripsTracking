@@ -26,3 +26,17 @@ class AddTripForm(Form):
     description = TextAreaField("Description", validators=[DataRequired(), Length(max=100)])
     budget = DecimalField("Budget")
     submit = SubmitField("Submit")
+
+class PutExpenseForm(Form):
+    expense_description = TextAreaField("Expense Discription", validators=[Length(max=100)])
+    expense_date = DateField("Expense Date")
+    amount = DecimalField("amount", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+
+class AddExpenseForm(Form):
+    expense_description = TextAreaField("Expense Discription", validators=[Length(max=100)])
+    expense_date = DateField("Expense Date")
+    amount = DecimalField("amount", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+

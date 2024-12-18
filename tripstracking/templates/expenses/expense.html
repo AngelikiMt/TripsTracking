@@ -12,29 +12,25 @@
     <div id="alert-container"></div>
     <div id="trip-details" class="card mt-4">
         <div class="card-body">
-            <h5 class="card-title">{{ expense.expense_id }}</h5>
-            <h6 class="card-subtitle mb-2 text-muted">{{ expense.expense_date }}</h6>
-            <p class="card-text">{{ expense.expense_description }}</p>
+            <h5 class="card-title">Expense No: {{ expense.expense_id }}</h5>
+            <p class="card-text"><strong>Date:</strong> {{ expense.expense_date }}</p>
+            <p class="card-text"><strong>Trip to:</strong> {{ destination }}</p>
+            <p class="card-text"><strong>Description:</strong> {{ expense.expense_description }}</p>
             <p class="card-text"><strong>Budget:</strong> €{{ expense.amount }}</p>
-            <p class="card-text"><small class="text-muted">Created on: {{ expense.created }}</small></p>
+            <p class="card-text"><small class="text-muted"><strong>Created on:</strong> {{ expense.created }}</small></p>
         </div>
     </div>
-    <button class="btn btn-primary mt-3" onclick="goBack()">Back to Expenses</button>
-    <a href="{{ url_for('views.delete_expense', expense_id=expense_id, trip_id=trip_id) }}" method="POST">
+    <button class="btn btn-primary mt-3" onclick="window.location.href='{{ url_for('views.get_all_expenses', trip_id=trip_id, destination=destination | urlencode)}}'">Back to Expenses</button>
+    <a href="{{ url_for('views.delete_expense', expense_id=expense_id, trip_id=trip_id, destination=destination | urlencode) }}" method="POST">
         <i class="material-icons" style="font-size:24px;">delete</i>
     </a>
-    <a href="{{ url_for('views.put_expense', expense_id=expense_id, trip_id=trip_id) }}">
+    <a href="{{ url_for('views.put_expense', expense_id=expense_id, trip_id=trip_id, destination=destination | urlencode) }}">
         <i class="fa fa-edit" style="font-size:24px;"></i>
     </a>
     <div class="row" id="expenses-container" data-trip-id="{{ expense.trip_id }}"></div>
+    <button class="btn btn-secondary mt-3" onclick="window.location.href='{{ url_for('views.get_all_trips', trip_id=trip_id, destination=destination | urlencode) }}'">Back to Trips</button>
+    <button class="btn btn-secondary mt-3" onclick="window.location.href='{{ url_for('views.get_trip', trip_id=trip_id, destination=destination | urlencode) }}'">Back to {{ destination }} trip</button>
 </div>
-
-<script>
-    const tripId = document.getElementById('expenses-container').dataset.tripId; || '{{ expense.trip_id }}'
-    function goBack() {
-        window.location.href = `/trips/expenses/${tripId}`;
-    }
-</script>
 
 {% with messages = get_flashed_messages() %}
     {% for message in messages %}
