@@ -28,17 +28,17 @@ To install Project TripsTracking, follow these steps:
 <ins>Trips</ins>
 1. Home page: "/"
 2. All trips: "/trips/"
-3. Check details of a trip: "/trip/<int:trip_id>/<destination>"
+3. Check details of a trip: "/trip/trip_id/destination"
 4. Add a trip: "/add_trip" 
-5. Edit a trip: "/edit_trip/<int:trip_id>/<destination>"
-6. Delete a trip: "/delete_trip/<int:trip_id>/<destination>"
+5. Edit a trip: "/edit_trip/trip_id/destination"
+6. Delete a trip: "/delete_trip/trip_id/destination"
 
 <ins>Expenses</ins>
-1. All expenses: "/trips/expenses/<int:trip_id>/<destination>"
-2. Check details of an expense: "/trips/expenses/<int:trip_id>/<int:expense_id>/<destination>"
-3. Add an expense: "/trips/add_expense/<int:trip_id>/<destination>"
-4. Edit an expense: "/trips/edit_expense/<int:trip_id>/<int:expense_id>/<destination>"
-5. Delete an expense: "/trips/delete_expense/<int:trip_id>/<int:expense_id>/<destination>"
+1. All expenses: "/trips/expenses/trip_id/destination"
+2. Check details of an expense: "/trips/expenses/trip_id/expense_id/destination"
+3. Add an expense: "/trips/add_expense/trip_id/destination"
+4. Edit an expense: "/trips/edit_expense/trip_id/expense_id/destination"
+5. Delete an expense: "/trips/delete_expense/trip_id/expense_id/destination"
 
 <ins>User</ins>
 1. Register user: "/register"
