@@ -67,9 +67,9 @@ def get_all_trips():
         flash(error)
         return redirect(url_for('views.post_trip'))
     
-    trips_list = []
+    trips_dict = []
     for trip in trips:
-        trips_list.append({
+        trips_dict.append({
             "trip_id": escape(trip["trip_id"]),
             "destination": escape(trip["destination"]),
             "date": escape(trip["date"]),
@@ -79,9 +79,8 @@ def get_all_trips():
         })
 
     if json_response:
-        respond = {"trips": trips_list}
-        return jsonify(respond), 200
-    return render_template('trips/trips.html', trips=trips_list)
+        return jsonify({"trips": trips_dict}), 200
+    return render_template('trips/trips.html', trips=trips_dict)
 
 @views.route('/trip/<int:trip_id>/<destination>', methods=['GET'])
 @crud_trips

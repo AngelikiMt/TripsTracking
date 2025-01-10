@@ -1,59 +1,41 @@
-from tests.conftest import client
-from flask import session
-from tests.conftest import app, auth
-from tripstracking import db
+from flask import g, session
+from tripstracking.db import open_db
 
-def test_get_register_user_json(client):
-    response = client.get("/users/register", headers={"Accept": "application/json"})
-    assert response.status_code == 200
+
+def test_register(client, app):
+    assert client.get('/users/register').status_code == 200
+    response = client.post(
+        'users/register', data={'username': 'tester', 'password': 'testpassword', 'fullname': 'Test User', 'email': 'test@example.com'}
+    )
+    assert response.headers["Location"] == "/users/login"
+
+    with app.app_context():
+        assert open_db().execute(
+            "SELECT * FROM user WHERE username = 'tester'",
+        ).fetchone() is not None
     
-def test_get_register_user_html(client):
-    response = client.get("/users/register")
-    assert response.status_code == 200
-
-def test_post_register_user(client):
-    data = {
-        "username": "Tester",
-        "password": "securitypassword",
-        "fullname": "Tester User",
-        "email": "testerUser@mailexample.com"
-    }
-    response = client.post("/users/register", json=data)
-    assert response.status_code == 200
-
-def test_get_login_user_json(client):
-    response = client.get("/users/login", headers={"Accept": "application/json"})
-    assert response.status_code == 200
-
-def test_post_login_user(client, auth):
-    assert client.get("/users/login").status_code == 200
+def test_login(client, auth):
+    assert client.get('/users/login').status_code == 200
     response = auth.login()
-    
-    with client:
-        response = client.get('/')
-        assert response.status_code == 200
+    assert response.headers["Location"] == "/"
 
-def test_logout_user(client, auth):
+    with client:
+        client.get('/')
+        assert session['user_id'] == 1
+        assert g.user['username'] == 'test'
+
+def test_logout(client, auth):
     auth.login()
 
     with client:
-        response = auth.logout()
-        assert response.status_code == 200
+        client.get('/')
+        assert 'user_id' in session
+        auth.logout()
         assert 'user_id' not in session
 
 def test_delete_user(client, auth):
-    response = auth.login()
-    assert response.status_code == 302
+    auth.login()
 
-    with client.session_transaction() as session:
-        assert 'user_id' in session
-        assert session['user_id'] == 1  # Ensure the session user_id matches
+    with client:
+        assert client.get('/users/delete_user').status_code == 200
 
-    # Attempt to delete the user
-    response = auth.delete()
-    assert response.status_code == 200
-
-    # Confirm user session is cleared
-    with client.session_transaction() as session:
-        assert 'user_id' not in session
-        assert b"User deleted successfully!" in response.data

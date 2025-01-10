@@ -1,5 +1,5 @@
 import sqlite3
-from flask import current_app, g, jsonify
+from flask import current_app, g
 import click
 from datetime import datetime
 
