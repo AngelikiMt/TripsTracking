@@ -2,55 +2,48 @@
 
 ## **Introduction**
 
-This repository contains the files used for generating the <ins>TripsTracking<ins> application.
+TripsTracking is a Flask-based web application designed to help travelers plan and manage their trips more effectively, while also enabling travel agents to enhance their services through a certalized trips managements system. 
 
-TripsTracking is a Flask-based application that supports travelers creating custom trips or travel agents to level up their businesses and provide a trip app to their customers. This travel app allows the user to collect and record data such as trip destinations or expenses trackers for having all information gathered and making more easy decisions regarding their get aways.
+This app allows users to record and organize key travel data, such as destinations, itineraries and expencies. The goal is to address a common challenge travlers face, having scattered travel details, by offering an all-in-one platform that supports better trip planning and decision-making. 
 
-TripsTracking is an application designed using: 
-```
-Python
-RESTfull API
-SQLite database
-Pytest API testing
-```
+| Requirements                |
+| ------------                |
+| blinker >= 1.9.0            |
+| click >= 8.1.7              |
+| colorama >= 0.4.6           |
+| dnspython >= 2.7.0          |
+| email_validator >= 2.2.0    |
+| Flask >= 3.1.0              |
+| Flask-SQLAlchemy >= 3.1.1   |
+| Flask-WTF >= 1.2.2          |
+| greenlet >= 3.1.1           |
+| idna >= 3.10                |
+| niconfig >= 2.0.0           |
+| itsdangerous >= 2.2.0       |
+| Jinja2 >= 3.1.4             |
+| MarkupSafe >= 3.0.2         |
+| packaging >= 24.2           |
+| pluggy >= 1.5.0             |
+| pytest >= 8.3.3             |
+| pytest-mock >= 3.14.0       |
+| setuptools >= 75.6.0        |
+| SQLAlchemy >= 2.0.36        |
+| typing_extensions >= 4.12.2 |
+| Werkzeug >= 3.1.3           |
+| WTForms >= 3.2.1            |
 
-## **Installation** 
-To install Project TripsTracking, follow these steps:
 
-1. Clone the repository: **`git clone https://github.com/AngelikiMt/TripTracking.git`**
-2. Navigate to the project directory: **`cd TripsTracking`**
-3. Create a virtual environment and activate it. For using PowerShell:         ```python -m venv .venv
-.venv/Scripts/activate```
-4. Install the Required Python packages: **`pip install -r requirements.txt`**
-5. run the project locally: **`flask --app trips.py run`**
+## **Install** 
 
-## **Routes** 
-<ins>Trips</ins>
-1. Home page: "/"
-2. All trips: "/trips/"
-3. Check details of a trip: "/trip/trip_id/destination"
-4. Add a trip: "/add_trip" 
-5. Edit a trip: "/edit_trip/trip_id/destination"
-6. Delete a trip: "/delete_trip/trip_id/destination"
+> ``` git clone https://github.com/AngelikiMt/TripTracking.git ```
+> ``` python -m venv .venv ```
+> ``` .venv/Scripts/activate ```
+> ``` pip install flask ```
+> ``` pip install -r requirements.txt ```
+> ``` flask --app trips.py run ```
+> ``` flask --app trips.py init-db ```
 
-<ins>Expenses</ins>
-1. All expenses: "/trips/expenses/trip_id/destination"
-2. Check details of an expense: "/trips/expenses/trip_id/expense_id/destination"
-3. Add an expense: "/trips/add_expense/trip_id/destination"
-4. Edit an expense: "/trips/edit_expense/trip_id/expense_id/destination"
-5. Delete an expense: "/trips/delete_expense/trip_id/expense_id/destination"
 
-<ins>User</ins>
-1. Register user: "/register"
-2. Login user: "/login"
-3. Delete a user: "/delete_user"
-4. Logout a user: "/logout"
-
-## **Usage**
-
-1. For creating the database run the following command in the terminal:
-**`flask --app trips.py init-db`**
-2. Use the provided routes to create and manage your trips and expenses.
 
 
 
