@@ -36,7 +36,9 @@ This app allows users to record and organize key travel data, such as destinatio
 ## **Install** 
 
 1. Clone the repository
-```git clone https://github.com/AngelikiMt/TripTracking.git```
+```
+git clone https://github.com/AngelikiMt/TripTracking.git
+```
 2. Create a virtual environment in PowerShell terminal and activate it:      
 
 ``` 
@@ -44,9 +46,18 @@ python -m venv .venv
 .venv/Scripts/activate 
 ```
 
-3. Install the Required packages: ```pip install -r requirements.txt```
-4. Creating the database: ```flask --app trips.py init-db```
-5. Run the project locally: ```flask --app trips.py run```
+3. Install the Required packages
+```
+pip install -r requirements.txt
+```
+4. Creating the database
+```
+flask --app trips.py init-db
+```
+5. Run the project locally
+```
+flask --app trips.py run
+```
 
 
 
